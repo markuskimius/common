@@ -27,7 +27,7 @@ Coffee requires [cafe].  Install cafe first then run the following command to
 install coffee.
 
 ```bash
-$ cafe-install https://github.com/markuskimius/coffee.git
+$ cafe install-git https://github.com/markuskimius/coffee.git
 ```
 
 
