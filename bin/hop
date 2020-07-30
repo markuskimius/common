@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##############################################################################
-# COFFEE: Buzz up your UNIX login
+# COFFEE: Unix utilities I use way too much
 # https://github.com/markuskimius/coffee
 #
 # Copyright (c)2020 Mark K. Kim
@@ -12,7 +12,7 @@
 function usage() {
     cat <<EOF
 hop onto a host using a short mnemonic.  The list of hosts are specified in
-\$COFFEE/*/etc/coffee-hosts.json.
+\$CAFE/*/etc/coffee-hosts.json.
 
 Usage: ${SCRIPTNAME} [-r] [-u] [-s] [-l] NAME
 
@@ -44,7 +44,7 @@ function main() {
     local name
 
     # Process options
-    while coffee::getopt "hrusl" "help,regex,user,server,login" "$@"; do
+    while getopt-sh "hrusl" "help,regex,user,server,login" "$@"; do
         case "$OPTOPT" in
             -h|--help)     usage && exit 0          ;;
             -r|--regex)    REGEX=1                  ;;
@@ -76,7 +76,7 @@ function hop() {
     local args=()
     local expected=${#PARAMS[@]}
 
-    for json in "${COFFEE}"/*/etc/coffee-hosts.json; do
+    for json in "${CAFE}"/*/etc/coffee-hosts.json; do
         if [[ -e "${json}" ]]; then
             while IFS= read -r line; do
                 args+=( "$line" )

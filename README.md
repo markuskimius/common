@@ -1,36 +1,35 @@
 # coffee
-Buzz up your UNIX login.
+Unix utilities I use way too much
 
-## Requirements
-Bash. And some other utilities commonly available on Linux.
+
+## Like what?
+
+* `ansi` - print the ansi color codes in color to stdout.
+* `body` - filter all but the first line of text.
+* `grep1` - grep that always matches the first line of a file.
+* `hi` - highlight text matching regex in a file.
+* `nu` - cat with line number numbers.
+* `un` - cat with reverse line numbers.
+* `open` - open the Finder window from the macOS terminal.
+* `start` - open the Explorer a window from the Cygwin terminal.
+* `mancat` - print the man page from a man file.
+* `pidtree` - print the processes matching a regex, all of its children, and
+  all of its ancestors, as a tree.
+* `left` - print only the left part of a text file that fits inside the
+  terminal width.
+
+... plus more.
+
 
 ## Installation
-Source `etc/bashrc` from your bash startup script.  E.g.,
 
+Coffee requires [cafe].  Install cafe first then run the following command to
+install coffee.
+
+```bash
+$ cafe-install https://github.com/markuskimius/coffee.git
 ```
-$ mkdir ~/coffee
-$ cd ~/coffee
-$ git clone https://github.com/markuskimius/coffee.git
-$ echo 'source "${HOME}/coffee/coffee/etc/bashrc"' >> ~/.bashrc
-```
 
-## What does it do?
-Installing coffee:
-
-* Provides several scripts, functions, and libraries to bash.
-* Sets the environment variable `$COFFEE` to coffee's _parent_ directory.
-* Sets other environment variables:
-  * Add `$COFFEE/*/bin` to `$PATH`
-  * Add `$COFFEE/*/lib` to `$PYTHONPATH` that contain python scripts.
-  * Add `$COFFEE/*/lib` to `$TCLLIBPATH` that contain pkgIndex.tcl.
-* Sets up vim such that:
-  * `$COFFEE/*/etc/vimrc` are automatically loaded.
-  * `$COFFEE/*` vim plugins are automatically loaded.
-
-The idea is to be able to unpack packages into `$COFFEE` to automatically set
-it up for use in your UNIX environment.  In that spirit, `etc/bashrc` also
-sources any `$COFFEE/*/etc/bashrc`.  This also means that you must be careful
-to **only unpack trusted packages in `$COFFEE`.**
 
 ## License
 
@@ -38,4 +37,5 @@ to **only unpack trusted packages in `$COFFEE`.**
 
 
 [Apache 2.0]: <https://github.com/markuskimius/coffee/blob/master/LICENSE>
+      [cafe]: <https://github.com/markuskimius/cafe>
 

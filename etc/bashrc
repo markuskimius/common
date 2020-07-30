@@ -1,5 +1,5 @@
 ##############################################################################
-# COFFEE: Buzz up your UNIX login
+# COFFEE: Unix utilities I use way too much
 # https://github.com/markuskimius/coffee
 #
 # Copyright (c)2020 Mark K. Kim
@@ -9,18 +9,14 @@
 
 [[ -n $POSIXLY_CORRECT ]] && echo "cannot use coffee in posix mode" 1>&2 && return
 
-export COFFEE=${COFFEE-$(readlink -f "$(dirname "$(readlink -f "$BASH_SOURCE")")/../..")}
+export COFFEE=${CAFE}/coffee
 export COFFEE_LOGDIR=${COFFEE_LOGDIR-${COFFEE}/work/log}
 export COFFEE_TOKDIR=${COFFEE_TOKDIR-${COFFEE}/work/token}
-export BASH_ENV=${COFFEE}/coffee/etc/bashrc
 
-function coffee::main() {
-    local file
+# Source all startup files
+for __coffee_file in "${COFFEE}/etc/bashrc.d"/*; do
+    source "$__coffee_file"
+done
 
-    # Source all startup files
-    for file in "${COFFEE}/coffee/etc/bashrc.d"/*; do
-        source "$file"
-    done
-}
+unset __coffee_file
 
-coffee::main

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##############################################################################
-# COFFEE: Buzz up your UNIX login
+# COFFEE: Unix utilities I use way too much
 # https://github.com/markuskimius/coffee
 #
 # Copyright (c)2020 Mark K. Kim
@@ -11,7 +11,7 @@
 
 function usage() {
     cat <<EOF
-Install \$COFFEE/*/etc/crontab as the current user's crontab.
+Install \$CAFE/*/etc/crontab as the current user's crontab.
 
 Usage: ${SCRIPTNAME} [-v]
 
@@ -35,7 +35,7 @@ function main() {
     local errcount=0
 
     # Process options
-    while coffee::getopt "hv" "help,verbose" "$@"; do
+    while getopt-sh "hv" "help,verbose" "$@"; do
         case "$OPTOPT" in
             -h|--help)     usage && exit 0          ;;
             -v|--verbose)  VERBOSE=1                ;;
@@ -61,7 +61,7 @@ function install_crontab() {
     (( VERBOSE )) && crontab -l
 
     (( VERBOSE )) && header "INSTALLING NEW CRONTAB"
-    for file in "${COFFEE}"/*/etc/crontab; do
+    for file in "${CAFE}"/*/etc/crontab; do
         if [[ -e "$file" ]]; then
             echo "Found ${file} ..."
             crontabs+=( "$file" )

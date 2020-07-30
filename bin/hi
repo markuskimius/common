@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##############################################################################
-# COFFEE: Buzz up your UNIX login
+# COFFEE: Unix utilities I use way too much
 # https://github.com/markuskimius/coffee
 #
 # Copyright (c)2020 Mark K. Kim

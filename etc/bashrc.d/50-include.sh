@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##############################################################################
-# COFFEE: Buzz up your UNIX login
+# COFFEE: Unix utilities I use way too much
 # https://github.com/markuskimius/coffee
 #
 # Copyright (c)2020 Mark K. Kim
@@ -25,11 +25,11 @@ function coffee::include() {
                 fullpath=$(dirname "$(readlink -f "${BASH_SOURCE[$((frame-1))]}")")/$file
                 ;;
 
-        *)      # Search ${COFFEE}/*/lib/bash
+        *)      # Search ${CAFE}/*/lib/
                 declare dir
 
                 # Look for $file in the lib path
-                for dir in "${COFFEE}"/*/lib; do
+                for dir in "${CAFE}"/*/lib; do
                     if [[ -e "$dir/$file" ]]; then
                         fullpath="$dir/$file"
                         break
