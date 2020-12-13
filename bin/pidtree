@@ -249,7 +249,7 @@ function print_pid() {
     local output
 
     # Build the output string
-    output="${PS[$pid|cols]} ${indent:4}${PS[$pid|command]}"
+    output="${PS[$pid|cols]}  ${indent:4}${PS[$pid|command]}"
 
     # Shorten the output to terminal if not in wide mode
     if [[ -t 1 ]] && (( ! WIDEMODE )); then
