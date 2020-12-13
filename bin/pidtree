@@ -62,7 +62,7 @@ SCRIPTNAME=$(basename "${BASH_SOURCE}")
 COLS=( ppid pid ${PIDTREE_COLS//,/ } )
 WIDEMODE=0
 
-declare -A PS=() 2>/dev/null || ${PS?BASH 4.0 or later required}
+declare -A PS=() 2>/dev/null || ${PIDTREE_ERROR?BASH 4.0 or later required}
 PRINT_PIDS=()
 PRINTED_PIDS=()
 HILITE_PIDS=()
