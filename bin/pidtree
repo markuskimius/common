@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ##############################################################################
 # COFFEE: Unix utilities I use way too much
@@ -132,24 +132,29 @@ function memoize_ps() {
         # Header row
         if [[ "$pid" != +([0-9]) ]]; then
             local leader=${psline%%PPID*}
-            local trailer=${psline%COMMAND*}
+            local trailer=${psline% COMMAND*}
 
             # Header row's pid is "HEADER"
             pid="HEADER"
             ppid="HEADER"
 
             # Calculate column positions
-            colstart=$(( ${#leader} + 5 ))              # 5 = strlen(PPID) + space
-            colwidth=$(( ${#trailer} - colstart - 1 ))  # 1 = space
-            cmdstart=$(( colstart + colwidth + 1))      # 1 = space
+            colstart=$(( ${#leader} + 4 ))          # 4 = strlen(PPID)
+            colwidth=$(( ${#trailer} - colstart ))
+            cmdstart=$(( colstart + colwidth ))
         fi
 
-        # Save meta data
+        # Save data
         PS[$pid|ppid]=$ppid
-        PS[$pid|cols]=${psline:$colstart:$colwidth}
+        PS[$pid|cols]=${psline:colstart:colwidth}
         PS[$pid|command]=${psline:$cmdstart}
         PS[$ppid|cpids]+=${PS[$ppid|cpids]+ }$pid
         PS[pids]+=${PS[pids]+ }$pid
+
+        # Adjust for misaligned columns and strip spaces
+        PS[$pid|cols]=${PS[$pid|cols]#* }
+        PS[$pid|cols]+=${PS[$pid|command]%% *}
+        PS[$pid|command]=${PS[$pid|command]#* }
     done < <(ps axww -o $(printf "%s," "${COLUMNS[@]}")command)
 }
 
