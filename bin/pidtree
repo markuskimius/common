@@ -24,8 +24,14 @@ Usage: ${SCRIPTNAME} [-w] [-i] [-o COLUMNS] [PID or REGEX]
   -w,--wide             Do not trim the output to the width of the terminal.
   -i,--ignore-case      Ignore case when matching REGEX.
   -o,--output COLUMNS   A comma-separated list of columns to add to the output.
-                        Column names valid to 'ps -o' are accepted.  Width
-                        control is accepted.
+                        Column names valid to 'ps -o' are accepted.  Modifiers
+                        : to control the output width and = to modify the column
+                        heading are accepted if it is accepted by 'ps'.
+
+Environment Variables:
+
+  PIDTREE_COLS          A comma-separated list of columns to add to the output
+                        by default.
 
 Examples:
 
@@ -49,7 +55,7 @@ EOF
 include "getopt.sh"
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")
-COLUMNS=( ppid pid )
+COLS=( ppid pid ${PIDTREE_COLS//,/ } )
 WIDEMODE=0
 
 declare -A PS=() 2>/dev/null || ${PS?BASH 4.0 or later required}
@@ -70,7 +76,7 @@ function main() {
             -h|--help)         usage && exit 0             ;;
             -w|--wide)         WIDEMODE=1                  ;;
             -i|--ignore-case)  shopt -s nocasematch        ;;
-            -o|--output)       COLUMNS+=( ${OPTARG//,/ } ) ;;
+            -o|--output)       COLS+=( ${OPTARG//,/ } )    ;;
             *)                 exitcode=1                  ;;
         esac
     done
@@ -155,7 +161,7 @@ function memoize_ps() {
         PS[$pid|cols]=${PS[$pid|cols]#* }
         PS[$pid|cols]+=${PS[$pid|command]%% *}
         PS[$pid|command]=${PS[$pid|command]#* }
-    done < <(ps axww -o $(printf "%s," "${COLUMNS[@]}")command)
+    done < <(ps axww -o $(printf "%s," "${COLS[@]}")command)
 }
 
 
