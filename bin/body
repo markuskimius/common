@@ -11,11 +11,13 @@
 
 function usage() {
     cat <<EOF
-Output the first line in stdin then pass the rest to PROGRAM.
+Output the NUM lines in stdin then pass the rest to PROGRAM.
 
-Usage: ${SCRIPTNAME} PROGRAM [ARGS]
+Usage: ${SCRIPTNAME} [-NUM] PROGRAM [ARGS]
 
-  ARGS                  Arguments to PROGRAM.
+  NUM             Number of lines to pass through from stdin to stdout. [Default=1]
+  PROGRAM         Program to which to pass the remaining stdin.
+  ARGS            Argument(s) to PROGRAM.
 
 Examples:
 
@@ -33,11 +35,15 @@ EOF
 # PROGRAM BEGINS HERE
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")
+HEADCOUNT=1
 
 
 function main() {
     if [[ "$1" == "-h" || "$1" == "--help" ]]; then
         usage && exit 0
+    elif [[ "$1" =~ ^-[0-9]+$ ]]; then
+        HEADCOUNT=${1:1}
+        shift
     fi
 
     body "$@"
@@ -45,10 +51,13 @@ function main() {
 
 
 function body() {
-    local first
+    local head
+    local i
 
-    IFS= read -r first
-    printf "%s\n" "$first"
+    for (( i=0; i < HEADCOUNT; i++ )); do
+        IFS= read -r head
+        printf "%s\n" "$head"
+    done
 
     "$@"
 }
