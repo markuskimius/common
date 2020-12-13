@@ -59,6 +59,7 @@ EOF
 include "getopt.sh"
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")
+PSPATH=$(command -v procps || command -v ps)     # Use 'procps' if installed
 COLS=( ppid pid ${PIDTREE_COLS//,/ } )
 WIDEMODE=0
 
@@ -165,7 +166,7 @@ function memoize_ps() {
         PS[$pid|cols]=${PS[$pid|cols]#* }
         PS[$pid|cols]+=${PS[$pid|command]%% *}
         PS[$pid|command]=${PS[$pid|command]#* }
-    done < <(ps axww -o $(printf "%s," "${COLS[@]}")command)
+    done < <($PSPATH axww -o $(printf "%s," "${COLS[@]}")command)
 }
 
 
@@ -281,8 +282,8 @@ function print_pid() {
 
 
 function termwidth() {
-    (( ! "$COLUMNS" )) && COLUMNS=$(tput cols 2>/dev/null)
-    (( ! "$COLUMNS" )) && COLUMNS=128
+    [[ -z "$COLUMNS" ]] && COLUMNS=$(tput cols 2>/dev/null)
+    [[ -z "$COLUMNS" ]] && COLUMNS=128
 
     echo "$COLUMNS"
 }
