@@ -52,7 +52,7 @@ SCRIPTNAME=$(basename "${BASH_SOURCE}")
 COLUMNS=( ppid pid )
 WIDEMODE=0
 
-declare -A PS=() 2>/dev/null || ( echo "Requires BASH 4.0 or later" && exit 1 ) || exit 1
+declare -A PS=() 2>/dev/null || ${PS?BASH 4.0 or later required}
 PRINT_PIDS=()
 PRINTED_PIDS=()
 HILITE_PIDS=()
