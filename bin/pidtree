@@ -49,7 +49,7 @@ EOF
 include "getopt.sh"
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")
-COLUMNS=( ppid pid:7 )
+COLUMNS=( ppid pid )
 WIDEMODE=0
 
 declare -A PS=()
@@ -121,29 +121,33 @@ function main() {
 
 
 function memoize_ps() {
-    local lastcol=${#COLUMNS[@]}
+    local colstart colwidth cmdstart
     local psline
 
-    while read -r psline; do
+    while IFS= read -r psline; do
         local psrow=( $psline )
         local ppid=${psrow[0]}
         local pid=${psrow[1]}
-        local i
 
-        # Header row's pid is "HEADER"
+        # Header row
         if [[ "$pid" != +([0-9]) ]]; then
+            local leader=${psline%%PPID*}
+            local trailer=${psline%COMMAND*}
+
+            # Header row's pid is "HEADER"
             pid="HEADER"
             ppid="HEADER"
-        fi
 
-        # Save the column values
-        for (( i=1; i < $lastcol; i++ )); do
-            PS[$pid|$i]=${psrow[$i]}
-        done
+            # Calculate column positions
+            colstart=$(( ${#leader} + 5 ))              # 5 = strlen(PPID) + space
+            colwidth=$(( ${#trailer} - colstart - 1 ))  # 1 = space
+            cmdstart=$(( colstart + colwidth + 1))      # 1 = space
+        fi
 
         # Save meta data
         PS[$pid|ppid]=$ppid
-        PS[$pid|command]=${psrow[*]:$lastcol}
+        PS[$pid|cols]=${psline:$colstart:$colwidth}
+        PS[$pid|command]=${psline:$cmdstart}
         PS[$ppid|cpids]+=${PS[$ppid|cpids]+ }$pid
         PS[pids]+=${PS[pids]+ }$pid
     done < <(ps axww -o $(printf "%s," "${COLUMNS[@]}")command)
@@ -237,18 +241,10 @@ function print_pid() {
     local indent="${2-}+-- "
     local color=""
     local plain=""
-    local output=""
-    local i
+    local output
 
     # Build the output string
-    for (( i=1; i < ${#COLUMNS[@]}; i++ )); do
-        local width=${COLUMNS[$i]#*:}
-
-        [[ "$width" != +([0-9]) ]] && width=8
-
-        output+=$(printf "%*s " "$width" "${PS[$pid|$i]}")
-    done
-    output+=" ${indent:4}${PS[$pid|command]}"
+    output="${PS[$pid|cols]} ${indent:4}${PS[$pid|command]}"
 
     # Shorten the output to terminal if not in wide mode
     if [[ -t 1 ]] && (( ! WIDEMODE )); then
