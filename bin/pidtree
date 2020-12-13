@@ -45,6 +45,10 @@ Examples:
   # Show all processes in a tree format and highlight ssh and the root
   ${SCRIPTNAME} 1 ssh
 
+  # Show all ssh processes with username, start time, rss, and vsz.
+  ${SCRIPTNAME} -o user,start,rss,vsz ssh
+  PIDTREE_COLS=user,start,rss,vsz ${SCRIPTNAME} ssh
+
 EOF
 }
 
