@@ -56,7 +56,7 @@ function ansi() {
                 # code="$attr;$fore;$back"
                 code="$attr;$fore"
 
-                echo -en "\e[${code}m${code}\e[0m\t"
+                echo -en "\033[${code}m${code}\033[0m\t"
             done
             echo
         done
