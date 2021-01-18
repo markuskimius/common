@@ -25,6 +25,7 @@ EOF
 include "getopt.sh"
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")
+EXTENDED=0
 
 
 function main() {
@@ -32,10 +33,11 @@ function main() {
     local errcount=0
 
     # Process options
-    while getopt-sh "h" "help" "$@"; do
+    while getopt-sh "eh" "extended,help" "$@"; do
         case "$OPTOPT" in
-            -h|--help)  usage && exit 0          ;;
-            *)          errcount=$((errcount+1)) ;;
+            -e|--extended) EXTENDED=1               ;;
+            -h|--help)     usage && exit 0          ;;
+            *)             errcount=$((errcount+1)) ;;
         esac
     done
 
@@ -45,11 +47,17 @@ function main() {
         exit 1
     fi
 
-    ansi "${OPTARRAY[@]}"
+    if (( EXTENDED )); then
+        ansi_ext "${OPTARRAY[@]}"
+    else
+        ansi "${OPTARRAY[@]}"
+    fi
 }
 
 
 function ansi() {
+    local back fore attr code
+
     # for back in 40 41 42 43 44 45 46 47; do
         for fore in 30 31 32 33 34 35 36 37; do
             for attr in 0 1 4 5 7 8; do
@@ -60,6 +68,23 @@ function ansi() {
             done
             echo
         done
+    # done
+}
+
+
+function ansi_ext() {
+    local back fore attr code
+
+    # for back {0..255}; do
+        for fore in {0..255}; do
+            # code="$(tput setaf $fore)$(tput setab $back)"
+            code="$(tput setaf $fore)"
+
+            printf "%s%3d%s " "$code" $fore "$(tput sgr0)"
+
+            (( fore % 16 == 15 )) && echo
+        done
+        echo
     # done
 }
 
