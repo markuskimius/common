@@ -11,8 +11,8 @@
 
 function usage() {
     cat <<EOF
-Open a file or directory with the native OS program.  Currently only supports
-opening a file or directory in Windows under Cygwin.
+Open a file or directory with the native OS program.  Supports Cygwin and
+macOS Terminal.
 
 Usage: ${SCRIPTNAME} [FILE]
 

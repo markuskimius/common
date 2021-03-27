@@ -10,8 +10,9 @@ Unix utilities I use way too much
 * `hi` - highlight text matching regex in a file.
 * `nu` - cat with line number numbers.
 * `un` - cat with reverse line numbers.
-* `open` - open a file or the Finder window from the macOS terminal.
-* `start` - open a file or the Explorer a window from the Cygwin terminal.
+* `open` - open a file or the Finder/Explorer window from the macOS or Cygwin
+  terminal.
+* `start` - same as `open`.
 * `mancat` - print the man page from a man file.
 * `pidtree` - print the processes matching a regex, all of its children, and
   all of its ancestors, as a tree.
