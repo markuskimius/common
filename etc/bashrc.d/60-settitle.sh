@@ -24,12 +24,13 @@ function coffee::settitle() {
 # TEST CODE
 
 if (( ${#BASH_SOURCE[@]} == 1 )); then
-    coffee::include getopt.sh
+    include "bashlib/exception.sh"
+    include "getopt.sh"
 
     function main() {
         coffee::settitle 'Hi there'
 
-        [[ "$TITLE" == 'Hi there' ]] || coffee::throw
+        [[ "$TITLE" == 'Hi there' ]] || die
     }
 
     main "$@"

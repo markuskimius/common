@@ -29,6 +29,7 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
+include "bashlib/exception.sh"
 include "getopt.sh"
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")
@@ -156,7 +157,7 @@ function action() {
                         ${WIDTHS[1]} "${login}"   \
                         ${WIDTHS[2]} "${options}" \
                     )" ) ;;
-            *)      echo "We shouldn't get here -- $what" 1>&2 && coffee::throw ;;
+            *)      echo "We shouldn't get here -- $what" 1>&2 && die ;;
         esac
     done
 
