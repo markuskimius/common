@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec ts '[%Y%m%d-%H:%M:%.S]'
