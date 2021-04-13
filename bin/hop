@@ -29,7 +29,7 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-include "bashlib/exception.sh"
+include "bashlib.sh"
 include "getopt.sh"
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")

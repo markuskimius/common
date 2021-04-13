@@ -24,7 +24,7 @@ function coffee::settitle() {
 # TEST CODE
 
 if (( ${#BASH_SOURCE[@]} == 1 )); then
-    include "bashlib/exception.sh"
+    include "bashlib.sh"
     include "getopt.sh"
 
     function main() {
