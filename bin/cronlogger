@@ -61,7 +61,7 @@ fi
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-include "getopt.sh"
+source "getopt.sh" || exit 1
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")
 SCRIPTSTART=$(date)
@@ -73,7 +73,7 @@ KILL=0
 
 
 function main() {
-    local OPTOPT OPTARG OPTERR OPTARRAY
+    local OPTOPT OPTARG
     local logfile
 
     # Process options
@@ -89,8 +89,8 @@ function main() {
         esac
     done
 
-    if (( ${#OPTARRAY[@]} != 2 )); then
-        echo "Expected 2 arguments, got ${#OPTARRAY[@]}" 1>&2
+    if (( ${#OPTARG[@]} != 2 )); then
+        echo "Expected 2 arguments, got ${#OPTARG[@]}" 1>&2
         errcount=$((errcount+1))
     fi
 
@@ -107,7 +107,7 @@ function main() {
     trap '__on_exit' EXIT
 
     # Do my thing
-    cronlogger "${OPTARRAY[@]}"
+    cronlogger "${OPTARG[@]}"
 }
 
 

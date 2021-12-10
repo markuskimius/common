@@ -56,7 +56,7 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-include "getopt.sh"
+source "getopt.sh" || exit 1
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")
 PSPATH=$(command -v procps || command -v ps)     # Use 'procps' if installed
@@ -70,7 +70,7 @@ HILITE_PIDS=()
 
 
 function main() {
-    local OPTOPT OPTARG OPTERR OPTARRAY
+    local OPTOPT OPTARG
     local exitcode=0
     local arg
     local pid
@@ -96,7 +96,7 @@ function main() {
     memoize_ps
 
     # Map the PIDs
-    for arg in "${OPTARRAY[@]}"; do
+    for arg in "${OPTARG[@]}"; do
         local pids=( $(arg_to_pids "$arg") )
 
         if (( ! ${#pids[@]} )); then

@@ -29,13 +29,13 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-include "getopt.sh"
+source "getopt.sh" || exit 1
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")
 
 
 function main() {
-    local OPTOPT OPTARG OPTERR OPTARRAY
+    local OPTOPT OPTARG
     local errcount=0
 
     # Process options
@@ -52,7 +52,7 @@ function main() {
         exit 1
     fi
 
-    mancat "${OPTARRAY[@]}"
+    mancat "${OPTARG[@]}"
 }
 
 

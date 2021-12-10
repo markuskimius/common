@@ -29,8 +29,7 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-include "bashlib.sh"
-include "getopt.sh"
+source "getopt.sh" || exit 1
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")
 PARAMS=( name method 'username//""' hostname 'options//""' )
@@ -40,7 +39,7 @@ REGEX=0
 
 
 function main() {
-    local OPTOPT OPTARG OPTERR OPTARRAY
+    local OPTOPT OPTARG
     local errcount=0
     local name
 
@@ -63,9 +62,9 @@ function main() {
     fi
 
     # Default argument
-    (( ! ${#OPTARRAY[@]} )) && REGEX=1 && OPTARRAY=( . )
+    (( ! ${#OPTARG[@]} )) && REGEX=1 && OPTARG=( . )
 
-    for name in "${OPTARRAY[@]}"; do
+    for name in "${OPTARG[@]}"; do
         hop "${name}"
     done
 }

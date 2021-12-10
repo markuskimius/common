@@ -3,10 +3,5 @@
         "name": "getopt-sh",
         "method": "git",
         "url": "https://github.com/markuskimius/getopt-sh.git"
-    },
-    {
-        "name": "bashlib",
-        "method": "git",
-        "url": "https://github.com/markuskimius/bashlib.git"
     }
 ]

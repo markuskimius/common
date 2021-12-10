@@ -13,7 +13,9 @@ function usage() {
     cat <<EOF
 Display ANSI color codes.
 
-Usage: ${SCRIPTNAME}
+Usage: ${SCRIPTNAME} [-e]
+
+  -e,--extended         Show extended codes.
 
 EOF
 }
@@ -22,14 +24,14 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-include "getopt.sh"
+source "getopt.sh" || exit 1
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")
 EXTENDED=0
 
 
 function main() {
-    local OPTOPT OPTARG OPTERR OPTARRAY
+    local OPTOPT OPTARG
     local errcount=0
 
     # Process options
@@ -48,9 +50,9 @@ function main() {
     fi
 
     if (( EXTENDED )); then
-        ansi_ext "${OPTARRAY[@]}"
+        ansi_ext "${OPTARG[@]}"
     else
-        ansi "${OPTARRAY[@]}"
+        ansi "${OPTARG[@]}"
     fi
 }
 
