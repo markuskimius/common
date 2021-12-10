@@ -11,7 +11,7 @@
 
 function usage() {
     cat <<EOF
-Install \$CAFE/*/etc/crontab as the current user's crontab.
+Install \$DPM/*/etc/crontab as the current user's crontab.
 
 Usage: ${SCRIPTNAME} [-v]
 
@@ -61,7 +61,7 @@ function install_crontab() {
     (( VERBOSE )) && crontab -l
 
     (( VERBOSE )) && header "INSTALLING NEW CRONTAB"
-    for file in "${CAFE}"/*/etc/crontab; do
+    for file in "${CAFE-$DPM}"/*/etc/crontab; do
         if [[ -e "$file" ]]; then
             echo "Found ${file} ..."
             crontabs+=( "$file" )

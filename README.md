@@ -24,11 +24,11 @@ Unix utilities I use way too much
 
 ## Installation
 
-Coffee requires [cafe].  Install cafe first then run the following command to
+Coffee requires [dpm].  Install dpm first then run the following command to
 install coffee.
 
 ```bash
-$ cafe install-git https://github.com/markuskimius/coffee.git
+$ dpm install https://github.com/markuskimius/coffee.git
 ```
 
 
@@ -38,5 +38,5 @@ $ cafe install-git https://github.com/markuskimius/coffee.git
 
 
 [Apache 2.0]: <https://github.com/markuskimius/coffee/blob/master/LICENSE>
-      [cafe]: <https://github.com/markuskimius/cafe>
+       [dpm]: <https://github.com/markuskimius/dpm>
 

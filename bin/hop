@@ -12,7 +12,7 @@
 function usage() {
     cat <<EOF
 hop onto a host using a short mnemonic.  The list of hosts are specified in
-\$CAFE/*/etc/hop-hosts.json.
+\$DPM/*/etc/hop-hosts.json.
 
 Usage: ${SCRIPTNAME} [-r] [-u] [-s] [-l] NAME
 
@@ -76,7 +76,7 @@ function hop() {
     local args=()
     local expected=${#PARAMS[@]}
 
-    for json in "${CAFE}"/*/etc/hop-hosts.json; do
+    for json in "${CAFE-$DPM}"/*/etc/hop-hosts.json; do
         if [[ -e "${json}" ]]; then
             while IFS= read -r line; do
                 args+=( "$line" )

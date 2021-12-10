@@ -9,14 +9,22 @@
 
 [[ -n $POSIXLY_CORRECT ]] && echo "cannot use coffee in posix mode" 1>&2 && return
 
-export COFFEE=${CAFE}/coffee
-export COFFEE_LOGDIR=${COFFEE_LOGDIR-${COFFEE}/work/log}
-export COFFEE_TOKDIR=${COFFEE_TOKDIR-${COFFEE}/work/token}
+export COFFEE=${HOME}/work
+export COFFEE_LOGDIR=${COFFEE_LOGDIR-${COFFEE}/log}
+export COFFEE_TOKDIR=${COFFEE_TOKDIR-${COFFEE}/token}
 
-# Source all startup files
-for __coffee_file in "${COFFEE}/etc/bashrc.d"/*; do
-    source "$__coffee_file"
+COFFEE_CONFIGS=(
+    ~/.coffeerc
+    /usr/local/etc/coffeerc
+    /usr/etc/coffeerc
+    /etc/coffeerc
+)
+
+for coffee_file in "${COFFEE_CONFIGS[@]}"; do
+    if [[ -e "$file" ]]; then
+        source "$file"
+        break
+    fi
+
+    unset coffee_file
 done
-
-unset __coffee_file
-
