@@ -95,6 +95,9 @@ function main() {
     # Run ps once and memoize its output
     memoize_ps
 
+    # Memoize terminal width
+    termwidth
+
     # Map the PIDs
     for arg in "${OPTARG[@]}"; do
         local pids=( $(arg_to_pids "$arg") )
@@ -264,9 +267,7 @@ function print_pid() {
 
     # Shorten the output to terminal if not in wide mode
     if [[ -t 1 ]] && (( ! WIDEMODE )); then
-        local termwidth=$(termwidth)
-
-        output=${output:0:$termwidth}
+        output=${output:0:$COLUMNS}
     fi
 
     # Colorize if outputting to a terminal
@@ -284,8 +285,6 @@ function print_pid() {
 function termwidth() {
     [[ -z "$COLUMNS" ]] && COLUMNS=$(tput cols 2>/dev/null)
     [[ -z "$COLUMNS" ]] && COLUMNS=128
-
-    echo "$COLUMNS"
 }
 
 
