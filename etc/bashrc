@@ -20,6 +20,18 @@ COFFEE_CONFIGS=(
     /etc/coffeerc
 )
 
+
+function settitle() {
+    TITLE="${*-}"
+
+    if (( ! $# )); then
+        TITLE="${USER-$(whoami)}@${HOSTNAME-$(hostname)}"
+    fi
+
+    printf "\e]0;%s\a" "$TITLE"
+}
+
+
 for coffee_file in "${COFFEE_CONFIGS[@]}"; do
     if [[ -e "$file" ]]; then
         source "$file"
