@@ -1,0 +1,97 @@
+#!/bin/bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Display ANSI color codes.
+
+Usage: ${SCRIPTNAME} [-e]
+
+  -e,--extended         Show extended codes.
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+source "getopt.sh" || exit 1
+
+SCRIPTNAME=$(basename "${BASH_SOURCE}")
+EXTENDED=0
+
+
+function main() {
+    local OPTOPT OPTARG
+    local errcount=0
+
+    # Process options
+    while getopt-sh "eh" "extended,help" "$@"; do
+        case "$OPTOPT" in
+            -e|--extended) EXTENDED=1               ;;
+            -h|--help)     usage && exit 0          ;;
+            *)             errcount=$((errcount+1)) ;;
+        esac
+    done
+
+    # Sanity check
+    if (( errcount )); then
+        echo "Type '${SCRIPTNAME} -h' for help." 1>&2
+        exit 1
+    fi
+
+    if (( EXTENDED )); then
+        ansi_ext "${OPTARG[@]}"
+    else
+        ansi "${OPTARG[@]}"
+    fi
+}
+
+
+function ansi() {
+    local back fore attr code
+
+    # for back in 40 41 42 43 44 45 46 47; do
+        for fore in 30 31 32 33 34 35 36 37; do
+            for attr in 0 1 4 5 7 8; do
+                # code="$attr;$fore;$back"
+                code="$attr;$fore"
+
+                echo -en "\033[${code}m${code}\033[0m\t"
+            done
+            echo
+        done
+    # done
+}
+
+
+function ansi_ext() {
+    local back fore attr code
+
+    # for back {0..255}; do
+        for fore in {0..255}; do
+            # code="$(tput setaf $fore)$(tput setab $back)"
+            code="$(tput setaf $fore)"
+
+            printf "%s%3d%s " "$code" $fore "$(tput sgr0)"
+
+            (( fore % 16 == 15 )) && echo
+        done
+        echo
+    # done
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"

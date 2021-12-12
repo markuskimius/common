@@ -1,0 +1,91 @@
+#!/bin/bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Open a file or directory with the native OS program.  Supports Cygwin and
+macOS Terminal.
+
+Usage: ${SCRIPTNAME} [FILE]
+
+  FILE                  File or directory to open.
+
+Examples:
+
+  # Open the current folder in the OS.
+  ${SCRIPTNAME} .
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+source "getopt.sh" || exit 1
+
+SCRIPTNAME=$(basename "${BASH_SOURCE}")
+
+
+function main() {
+    local OPTOPT OPTARG
+    local errcount=0
+
+    # Process options
+    while getopt-sh "h" "help" "$@"; do
+        case "$OPTOPT" in
+            -h|--help)     usage && exit 0          ;;
+            *)             errcount=$((errcount+1)) ;;
+        esac
+    done
+
+    # Sanity check
+    if (( errcount )); then
+        echo "Type '${SCRIPTNAME} -h' for help." 1>&2
+        exit 1
+    fi
+
+    open "${OPTARG[@]}"
+}
+
+
+function open() {
+    local target=$(readlink -f "${1-.}")
+    local dir
+    local file
+
+    if [[ -d "$target" ]]; then
+        dir=$target
+        file=.
+    elif [[ -e "$target" ]]; then
+        dir=$(dirname "$target")
+        file=$(basename "$target")
+    else
+        echo "${1}: No such file or directory" 1>&2
+        exit 1
+    fi
+
+    cd "$dir"
+
+    if [[ -n $(command -v explorer.exe) ]]; then     # Cygwin
+        explorer.exe "$file"
+    elif [[ -n $(command -v /usr/bin/open) ]]; then  # macOS
+        /usr/bin/open "$file"
+    else
+        echo "Unknown platform"
+    fi
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"

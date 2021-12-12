@@ -1,0 +1,294 @@
+#!/usr/bin/env bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Display the process tree of one or more processes.  All specified pid(s)'
+ancestors and descendants are shown, but no siblings, in a tree format.  If
+output to a terminal, the specified pid(s) are highlighted.
+
+Usage: ${SCRIPTNAME} [-w] [-i] [-o COLUMNS] [PID or REGEX]
+
+  PID                   Show this pid's tree.
+  REGEX                 Show the pid tree of a process whose command matches REGEX.
+                        REGEX never matches the current process.
+
+  -w,--wide             Do not trim the output to the width of the terminal.
+  -i,--ignore-case      Ignore case when matching REGEX.
+  -o,--output COLUMNS   A comma-separated list of columns to add to the output.
+                        Column names valid to 'ps -o' are accepted.  Modifiers
+                        : to control the output width and = to modify the column
+                        heading are accepted if it is accepted by 'ps'.
+
+Environment Variables:
+
+  PIDTREE_COLS          A comma-separated list of columns to add to the output
+                        by default.
+
+Examples:
+
+  # Show all process in a tree format.
+  ${SCRIPTNAME} 1
+
+  # Show all bash and python processes in a tree format.
+  ${SCRIPTNAME} bash python
+  ${SCRIPTNAME} 'bash|python'
+
+  # Show all processes in a tree format and highlight ssh and the root
+  ${SCRIPTNAME} 1 ssh
+
+  # Show all ssh processes with username, start time, rss, and vsz.
+  ${SCRIPTNAME} -o user,start,rss,vsz ssh
+  PIDTREE_COLS=user,start,rss,vsz ${SCRIPTNAME} ssh
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+source "getopt.sh" || exit 1
+
+SCRIPTNAME=$(basename "${BASH_SOURCE}")
+PSPATH=$(command -v procps || command -v ps)     # Use 'procps' if installed
+COLS=( ppid pid ${PIDTREE_COLS//,/ } )
+WIDEMODE=0
+
+declare -A PS=() 2>/dev/null || ${PIDTREE_ERROR?BASH 4.0 or later required}
+PRINT_PIDS=()
+PRINTED_PIDS=()
+HILITE_PIDS=()
+
+
+function main() {
+    local OPTOPT OPTARG
+    local exitcode=0
+    local arg
+    local pid
+
+    # Process options
+    while getopt-sh "hwio:" "help,wide,ignore-case,output:" "$@"; do
+        case "$OPTOPT" in
+            -h|--help)         usage && exit 0             ;;
+            -w|--wide)         WIDEMODE=1                  ;;
+            -i|--ignore-case)  shopt -s nocasematch        ;;
+            -o|--output)       COLS+=( ${OPTARG//,/ } )    ;;
+            *)                 exitcode=1                  ;;
+        esac
+    done
+
+    # Sanity check
+    if (( exitcode )); then
+        echo "Type '${SCRIPTNAME} -h' for help." 1>&2
+        exit 1
+    fi
+
+    # Run ps once and memoize its output
+    memoize_ps
+
+    # Memoize terminal width
+    termwidth
+
+    # Map the PIDs
+    for arg in "${OPTARG[@]}"; do
+        local pids=( $(arg_to_pids "$arg") )
+
+        if (( ! ${#pids[@]} )); then
+            echo "${arg}: no matching pid" 1>&2
+            exitcode=1
+            continue
+        fi
+
+        for pid in "${pids[@]}"; do
+            HILITE_PIDS+=( "$pid" )
+            PRINT_PIDS+=(
+                $(ancestors_of "$pid")
+                "$pid"
+                $(descendants_of "$pid")
+            )
+        done
+    done
+
+    # Print the header
+    if (( ${#PRINT_PIDS[@]} )); then
+        print_pid "HEADER"
+    fi
+
+    # Print any PID yet to be printed
+    for pid in ${PRINT_PIDS[@]}; do
+        if [[ " ${PRINTED_PIDS[*]} " != *" $pid "* ]]; then
+            pidtree "$pid" || exitcode=$?
+        fi
+    done
+
+    return $exitcode
+}
+
+
+function memoize_ps() {
+    local colstart colwidth cmdstart
+    local psline
+
+    while IFS= read -r psline; do
+        local psrow=( $psline )
+        local ppid=${psrow[0]}
+        local pid=${psrow[1]}
+
+        # Header row
+        if [[ "$pid" != +([0-9]) ]]; then
+            local leader=${psline%%PPID*}
+            local trailer=${psline% COMMAND*}
+
+            # Header row's pid is "HEADER"
+            pid="HEADER"
+            ppid="HEADER"
+
+            # Calculate column positions
+            colstart=$(( ${#leader} + 4 ))          # 4 = strlen(PPID)
+            colwidth=$(( ${#trailer} - colstart ))
+            cmdstart=$(( colstart + colwidth ))
+        fi
+
+        # Save data
+        PS[$pid|ppid]=$ppid
+        PS[$pid|cols]=${psline:colstart:colwidth}
+        PS[$pid|command]=${psline:$cmdstart}
+        PS[$ppid|cpids]+=${PS[$ppid|cpids]+ }$pid
+        PS[pids]+=${PS[pids]+ }$pid
+
+        # Adjust for misaligned columns and strip spaces
+        PS[$pid|cols]=${PS[$pid|cols]#* }
+        PS[$pid|cols]+=${PS[$pid|command]%% *}
+        PS[$pid|command]=${PS[$pid|command]#* }
+    done < <($PSPATH axww -o $(printf "%s," "${COLS[@]}")command)
+}
+
+
+function arg_to_pids() {
+    local arg=$1
+
+    if [[ "$arg" == +([0-9]) ]]; then
+        [[ " ${PS[pids]} " == *" $arg "* ]] && echo "$arg"
+    else
+        pid_match "$arg"
+    fi
+}
+
+
+function pid_match() {
+    local re=$1
+    local pid
+
+    for pid in ${PS[pids]}; do
+        local cmd=${PS[$pid|command]}
+
+        # Match $cmd but not if it's this process or one of its children
+        if [[ "$cmd" =~ $re ]] && [[ "$$" != "$pid" ]] && [[ " ${PS[$$|cpids]} " != *" $pid "* ]]; then
+            echo "$pid"
+        fi
+    done
+}
+
+
+function ancestors_of() {
+    local pid=$1
+    local ppid=${PS[$pid|ppid]}
+
+    if (( "$ppid" )); then
+        ancestors_of "$ppid"
+        echo "$ppid"
+    fi
+}
+
+
+function descendants_of() {
+    local pid=$1
+    local cpid
+
+    for cpid in ${PS[$pid|cpids]}; do
+        echo "$cpid"
+        descendants_of "$cpid"
+    done
+}
+
+
+function pidtree() {
+    local pid=${1}
+    local indent=${2-}
+    local was_last=${3-0}
+    local cpids=()
+    local cpid
+
+    # Print the PID at this node
+    print_pid "$pid" "${indent}"
+
+    # Get the subset of child pids is in $PRINT_PIDS
+    for cpid in ${PS[$pid|cpids]}; do
+        if [[ " ${PRINT_PIDS[*]} " == *" $cpid "* ]]; then
+            cpids+=( "$cpid" )
+        fi
+    done
+
+    # Traverse print-eligible children
+    for cpid in "${cpids[@]}"; do
+        local is_last=0
+
+        # Calculate how child indentation should be drawn
+        [[ "$cpid" == "${cpids[${#cpids[@]}-1]}" ]] && is_last=1
+
+        # Visit the child pid
+        if (( was_last )); then
+            pidtree "$cpid" "${indent}    " $is_last    # no more siblings to draw
+        else
+            pidtree "$cpid" "${indent}|   " $is_last    # more siblings to draw beneath us
+        fi
+    done
+}
+
+
+function print_pid() {
+    local pid=$1
+    local indent="${2-}+-- "
+    local color=""
+    local plain=""
+    local output
+
+    # Build the output string
+    output="${PS[$pid|cols]}  ${indent:4}${PS[$pid|command]}"
+
+    # Shorten the output to terminal if not in wide mode
+    if [[ -t 1 ]] && (( ! WIDEMODE )); then
+        output=${output:0:$COLUMNS}
+    fi
+
+    # Colorize if outputting to a terminal
+    if [[ -t 1 ]] && [[ " ${HILITE_PIDS[*]} " == *" $pid "* ]]; then
+        color=$'\e[1;31m'
+        plain=$'\e[0m'
+    fi
+
+    # Output
+    echo "${color}${output}${plain}"
+    PRINTED_PIDS+=( "$pid" )
+}
+
+
+function termwidth() {
+    [[ -z "$COLUMNS" ]] && COLUMNS=$(tput cols 2>/dev/null)
+    [[ -z "$COLUMNS" ]] && COLUMNS=128
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"

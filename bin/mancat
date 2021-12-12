@@ -1,0 +1,69 @@
+#!/bin/bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Format and output a manpage file.
+
+Usage: ${SCRIPTNAME} [FILE.n]
+
+  FILE.n                Manpage file to output.
+
+Examples:
+
+  # Read the common manpage without installing it
+  ${SCRIPTNAME} common.1
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+source "getopt.sh" || exit 1
+
+SCRIPTNAME=$(basename "${BASH_SOURCE}")
+
+
+function main() {
+    local OPTOPT OPTARG
+    local errcount=0
+
+    # Process options
+    while getopt-sh "h" "help" "$@"; do
+        case "$OPTOPT" in
+            -h|--help)     usage && exit 0          ;;
+            *)             errcount=$((errcount+1)) ;;
+        esac
+    done
+
+    # Sanity check
+    if (( errcount )); then
+        echo "Type '${SCRIPTNAME} -h' for help." 1>&2
+        exit 1
+    fi
+
+    mancat "${OPTARG[@]}"
+}
+
+
+function mancat() {
+    # groff -t -e -mandoc -Tascii "$@"
+    # groff -t -e -mandoc -Tascii "$@" | col -bx
+    man -l "$@"
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"

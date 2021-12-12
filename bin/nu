@@ -1,0 +1,50 @@
+#!/bin/bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Output stdin with line numbers.
+
+Usage: ${SCRIPTNAME}
+
+Examples:
+
+  # ls with line numbers
+  ls | ${SCRIPTNAME}
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+SCRIPTNAME=$(basename "${BASH_SOURCE}")
+
+
+function main() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        usage && exit 0
+    fi
+
+    number "$@"
+}
+
+
+function number() {
+    cat -n "$@"
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"

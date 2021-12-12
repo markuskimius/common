@@ -1,0 +1,34 @@
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
+##############################################################################
+
+[[ -n "$POSIXLY_CORRECT" ]] && echo "cannot use common in posix mode" 1>&2 && exit 1
+
+
+##############################################################################
+# GLOBALS
+
+export WORKDIR=${HOME}/work
+
+__COMMON_CONFIGS=(
+    ~/.commonrc
+    /usr/local/etc/commonrc
+    /usr/etc/commonrc
+    /etc/commonrc
+)
+
+
+for __common_file in "${COMMON_CONFIGS[@]}"; do
+    if [[ -e "$__common_file" ]]; then
+        source "$__common_file"
+        break
+    fi
+done
+
+unset __common_file
+unset __COMMON_CONFIGS

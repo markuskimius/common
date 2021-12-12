@@ -1,0 +1,227 @@
+#!/bin/bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Execute a command after loading the common environment and write its output to
+a log file.
+
+Usage: ${SCRIPTNAME} [OPTIONS] JOBNAME COMMAND
+
+Options:
+  JOBNAME               The name of the cronjob.
+  COMMAND               Command to execute.  May be a quoted string containing
+                        arguments.
+
+  -t, --timeout=TIMEOUT Maximum runtime of the job. [Default=unlimited]
+  -k, --tokendir=PATH   Directory in which to create the token file. [Default=\$WORKDIR/token]
+  -l, --logdir=PATH     Directory in which to create the log file. [Default=\$WORKDIR/log]
+  -f, --force           Run even if the token from a previous run still exists.
+  -k, --kill            Kill the job if it's still running after TIMEOUT.
+
+Environment Variables:
+  WORKDIR               The default directory under with logs and tokens are
+                        created.  Logs are created under \$WORKDIR/log and the
+                        tokens under \$WORKDIR/token.  The token is removed
+                        upon the successful termination of COMMAND.
+
+Files:
+  \$WORKDIR/log/JOBNAME-YYYYMMDD_hh:mm:ss.log
+                        The default name of the logfile, where YYYYMMDD_hh:mm:ss
+                        is the date and time of when ${SCRIPTNAME} is started.
+
+  \$WORKDIR/token/${SCRIPTNAME}/JOBNAME.token
+                        The default name of the token file.
+
+Example
+  00 00 * * * "${DPM}/common/bin/cronlogger" -t "10 minutes" CRON_FILELIST 'find "\$HOME" -type f'
+
+EOF
+}
+
+
+##############################################################################
+# BOOTSTRAP
+
+SCRIPTDIR=$(dirname "$(readlink -f "${BASH_SOURCE}")")
+
+if [[ -f "${SCRIPTDIR}/../etc/bashrc" ]]; then
+    source "${SCRIPTDIR}/../etc/bashrc"
+fi
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+source "getopt.sh" || exit 1
+
+SCRIPTNAME=$(basename "${BASH_SOURCE}")
+SCRIPTSTART=$(date)
+TOKENDIR=$WORKDIR/token
+LOGDIR=$WORKDIR/log
+TIMEOUT=""
+FORCE=0
+KILL=0
+
+
+function main() {
+    local OPTOPT OPTARG
+    local logfile
+
+    # Process options
+    while getopt-sh "hkfl:o:t:" "help,kill,force,logdir:,tokendir:,timeout:" "$@"; do
+        case "$OPTOPT" in
+            -t|--timeout)  TIMEOUT=$(date -d "$SCRIPTSTART + $OPTARG") ;;
+            -o|--tokendir) TOKENDIR=$OPTARG ;;
+            -l|--logdir)   LOGDIR=$OPTARG   ;;
+            -f|--force)    FORCE=1          ;;
+            -k|--kill)     KILL=1           ;;
+            -h|--help)     usage && exit 0  ;;
+            *)             errcount=$((errcount+1)) ;;
+        esac
+    done
+
+    if (( ${#OPTARG[@]} != 2 )); then
+        echo "Expected 2 arguments, got ${#OPTARG[@]}" 1>&2
+        errcount=$((errcount+1))
+    fi
+
+    # Sanity check
+    if (( errcount )); then
+        echo "Type '${SCRIPTNAME} -h' for help." 1>&2
+        exit 1
+    fi
+
+    # Install signal handlers
+    trap '__on_signal TERM' TERM
+    trap '__on_signal HUP' HUP
+    trap '__on_signal INT' INT
+    trap '__on_exit' EXIT
+
+    # Do my thing
+    cronlogger "${OPTARG[@]}"
+}
+
+
+function __on_signal() {
+    local signal=$1
+    local signum=$(kill -l $signal)
+
+    # Record the cause of termination
+    echo "Caught $signal"
+
+    case "$signal" in
+        INT)    # SIGINT should send signal to itself to terminate.  See
+                # http://mywiki.wooledge.org/SignalTrap#Special_Note_On_SIGINT_and_SIGQUIT
+                trap - $signal
+                kill -s $signal $$
+                ;;
+
+        *)      trap - $signal
+                exit $((128 + signum))
+                ;;
+    esac
+}
+
+
+function __on_exit() {
+    # Kill all child processes
+    kill 0
+}
+
+
+function cronlogger() {
+    local jobname=$1
+    local command=$2
+    local logfile=$(logname "$jobname")
+
+    echo "$jobname cronjob logfile is $logfile"
+
+    mkdir -p "$(dirname "$logfile")" \
+    && run "$jobname" "$command" >& "$logfile"
+}
+
+
+function logname() {
+    local jobname=$1
+    local datetime=$(date -d "$SCRIPTSTART" "+%Y%m%d_%H:%M:%S")
+
+    echo "${LOGDIR}/${jobname}-${datetime}.log"
+}
+
+
+function run() {
+    local jobname=$1
+    local command=$2
+    local exitcode=0
+    local monitor=""
+
+    echo "$jobname started at $(date)"
+
+    if ! mktoken "$jobname"; then
+        echo "Unable to create token, terminating." 1>&2
+        exit 1
+    fi
+
+    if (( KILL )); then
+        local now=$(date +%s)
+        local future=$(date -d "$TIMEOUT" +%s)
+        local delta=$((future - now))
+
+        (( delta < 0 )) && delta=0
+        monitor="timeout $delta"
+    fi
+
+    # BASH ignores signals while a child process runs in the foreground.  Run
+    # the cronjob in the background so we can catch signals.
+    $monitor bash <<<$command & wait || exitcode=$?
+
+    if (( exitcode == 0 )); then
+        echo "$jobname terminated successfully at $(date)"
+        rmtoken "$jobname"
+    elif (( KILL && exitcode == 124 )); then
+        echo "$jobname timed out at $(date)"
+        rmtoken "$jobname"
+    elif (( KILL && exitcode == 137 )); then
+        echo "$jobname timed out at $(date) (SIGKILL)"
+        rmtoken "$jobname"
+    else
+        echo "$jobname terminated with exit code $exitcode at $(date)"
+    fi
+
+    return $exitcode
+}
+
+
+function mktoken() {
+    local jobname=$1
+    local tokenfile="${TOKENDIR}/${SCRIPTNAME}/${jobname}.token"
+
+    if [[ -f "$tokenfile" ]] && ! (( FORCE )); then
+        echo "${tokenfile}: already exists, terminating." 1>&2
+        exit 1
+    fi
+
+    mkdir -p "$(dirname "$tokenfile")" \
+    && echo "$TIMEOUT" > "$tokenfile"
+}
+
+
+function rmtoken() {
+    local jobname=$1
+    local tokenfile="${TOKENDIR}/${SCRIPTNAME}/${jobname}.token"
+
+    rm -f "$tokenfile"
+}
+
+
+main "$@"
+

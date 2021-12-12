@@ -1,0 +1,69 @@
+#!/bin/bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Output the NUM lines in stdin then pass the rest to PROGRAM.
+
+Usage: ${SCRIPTNAME} [-NUM] PROGRAM [ARGS]
+
+  NUM             Number of lines to pass through from stdin to stdout. [Default=1]
+  PROGRAM         Program to which to pass the remaining stdin.
+  ARGS            Argument(s) to PROGRAM.
+
+Examples:
+
+  # Top 5 connections with the largest send queue sizes
+  netstat -tunapl 2>/dev/null | tail -n+2 | ${SCRIPTNAME} sort -nrk3 | head -6
+
+Credits:
+  Adapted from https://unix.stackexchange.com/questions/11859
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+SCRIPTNAME=$(basename "${BASH_SOURCE}")
+HEADCOUNT=1
+
+
+function main() {
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        usage && exit 0
+    elif [[ "$1" =~ ^-[0-9]+$ ]]; then
+        HEADCOUNT=${1:1}
+        shift
+    fi
+
+    body "$@"
+}
+
+
+function body() {
+    local head
+    local i
+
+    for (( i=0; i < HEADCOUNT; i++ )); do
+        IFS= read -r head
+        printf "%s\n" "$head"
+    done
+
+    "$@"
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"
