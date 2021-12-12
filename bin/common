@@ -32,7 +32,7 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-SCRIPTNAME=$(basename "$BASH_SOURCE")
+SCRIPTNAME=$(basename -- "$BASH_SOURCE")
 
 
 function main() {
@@ -80,13 +80,16 @@ function python3-command() {
 function test-command() {
     source "colorize.sh" || exit 1
 
-    local commands=( cat crontab env git grep hostname jq netstat ps readlink sort tac timeout tput whoami )
+    local commands=(
+        basename cat crontab dirname env git grep hostname jq netstat ps
+        readlink sort tac timeout tput whoami
+    )
     local vars=( DPM HOME HOSTNAME USER WORKDIR )
     local isok=1
     local tmp
 
     function checking() {
-        printf "%-43s" "Checking $1 ..."
+        printf "%-44s" "Checking $1 ..."
     }
 
     function pass() {

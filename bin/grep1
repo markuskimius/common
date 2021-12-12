@@ -29,7 +29,7 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-SCRIPTNAME=$(basename "${BASH_SOURCE}")
+SCRIPTNAME=$(basename -- "$BASH_SOURCE")
 SHORTOPT_NOARG=EFGPiwxzsvVbnHhoqaIrRLlcTZU0123456789
 SHORTOPT_HASARG=efmdDBAC
 LONGOPT_NOARG=(

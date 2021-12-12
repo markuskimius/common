@@ -20,6 +20,7 @@ __copyright__ = 'Copyright 2021 Mark Kim'
 ##############################################################################
 # PUBLIC
 
+DPM = os.getenv('DPM', '.')
 WORKDIR = os.getenv('WORKDIR', '.')
 INDENT = None
 

@@ -34,7 +34,7 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-SCRIPTNAME=$(basename "${BASH_SOURCE}")
+SCRIPTNAME=$(basename -- "$BASH_SOURCE")
 HEADCOUNT=1
 
 

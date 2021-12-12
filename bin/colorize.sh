@@ -31,7 +31,7 @@ function colorize() {
         esac
     fi
 
-    printf "%s\n" "${begin}${text}${end}"
+    printf "%s" "${begin}${text}${end}"
 }
 
 

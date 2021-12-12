@@ -58,7 +58,7 @@ EOF
 
 source "getopt.sh" || exit 1
 
-SCRIPTNAME=$(basename "${BASH_SOURCE}")
+SCRIPTNAME=$(basename -- "$BASH_SOURCE")
 PSPATH=$(command -v procps || command -v ps)     # Use 'procps' if installed
 COLS=( ppid pid ${PIDTREE_COLS//,/ } )
 WIDEMODE=0

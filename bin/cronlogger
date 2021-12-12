@@ -63,7 +63,7 @@ fi
 
 source "getopt.sh" || exit 1
 
-SCRIPTNAME=$(basename "${BASH_SOURCE}")
+SCRIPTNAME=$(basename -- "$BASH_SOURCE")
 SCRIPTSTART=$(date)
 TOKENDIR=$WORKDIR/token
 LOGDIR=$WORKDIR/log
