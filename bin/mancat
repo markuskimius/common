@@ -1,12 +1,12 @@
 #!/bin/bash
 
 ##############################################################################
-# COFFEE: Unix utilities I use way too much
-# https://github.com/markuskimius/coffee
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
 #
-# Copyright (c)2020 Mark K. Kim
-# Released under the Apache license 2.0
-# https://github.com/markuskimius/coffee/blob/master/LICENSE
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
 ##############################################################################
 
 function usage() {
@@ -19,8 +19,8 @@ Usage: ${SCRIPTNAME} [FILE.n]
 
 Examples:
 
-  # Read the coffee manpage without installing it
-  ${SCRIPTNAME} coffee.1
+  # Read the common manpage without installing it
+  ${SCRIPTNAME} common.1
 
 EOF
 }

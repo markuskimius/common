@@ -1,17 +1,17 @@
 #!/bin/bash
 
 ##############################################################################
-# COFFEE: Unix utilities I use way too much
-# https://github.com/markuskimius/coffee
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
 #
-# Copyright (c)2020 Mark K. Kim
-# Released under the Apache license 2.0
-# https://github.com/markuskimius/coffee/blob/master/LICENSE
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
 ##############################################################################
 
 function usage() {
     cat <<EOF
-Test your system for compatibility with coffee.
+Test your system for compatibility with common.
 
 Usage: ${SCRIPTNAME}
 
@@ -40,7 +40,7 @@ function main() {
 function test-deps() {
     local tmp
 
-    echo "This tests your system's compatibility with coffee:"
+    echo "This tests your system's compatibility with common:"
 
     for tmp in "${COMMANDS[@]}"; do
         printf "%-*s" $WIDTH "Checking command $tmp ... "

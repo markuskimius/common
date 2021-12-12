@@ -1,12 +1,12 @@
 #!/bin/bash
 
 ##############################################################################
-# COFFEE: Unix utilities I use way too much
-# https://github.com/markuskimius/coffee
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
 #
-# Copyright (c)2020 Mark K. Kim
-# Released under the Apache license 2.0
-# https://github.com/markuskimius/coffee/blob/master/LICENSE
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
 ##############################################################################
 
 function usage() {
@@ -76,7 +76,7 @@ function hop() {
     local args=()
     local expected=${#PARAMS[@]}
 
-    for json in "${CAFE-$DPM}"/*/etc/hop-hosts.json; do
+    for json in "${DPM}"/*/etc/hop-hosts.json; do
         if [[ -e "${json}" ]]; then
             while IFS= read -r line; do
                 args+=( "$line" )

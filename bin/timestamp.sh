@@ -9,42 +9,26 @@
 # https://github.com/markuskimius/common/blob/master/LICENSE
 ##############################################################################
 
-function usage() {
-    cat <<EOF
-Output stdin with line numbers.
+#
+# Stamp every line of input with the current time.  It uses the `ts` command if
+# available, otherwise uses a custom function.
+#
+function timestamp() {
+    local line
 
-Usage: ${SCRIPTNAME}
-
-Examples:
-
-  # ls with line numbers
-  ls | ${SCRIPTNAME}
-
-EOF
-}
-
-
-##############################################################################
-# PROGRAM BEGINS HERE
-
-SCRIPTNAME=$(basename "${BASH_SOURCE}")
-
-
-function main() {
-    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
-        usage && exit 0
+    if command -v ts >/dev/null; then
+        ts '%Y%m%d %H:%M:%.S %z'
+    else
+        while IFS= read -r line; do
+            printf "%s %s\n" "$(date '+%Y%m%d %H:%M:%S.%N %z')" "$line"
+        done
     fi
-
-    number "$@"
-}
-
-
-function number() {
-    cat -n "$@"
 }
 
 
 ##############################################################################
 # ENTRY POINT
 
-main "$@"
+if (( ${#BASH_SOURCE[@]} == 1 )); then
+    timestamp "$@"
+fi

@@ -1,17 +1,17 @@
 #!/bin/bash
 
 ##############################################################################
-# COFFEE: Unix utilities I use way too much
-# https://github.com/markuskimius/coffee
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
 #
-# Copyright (c)2020 Mark K. Kim
-# Released under the Apache license 2.0
-# https://github.com/markuskimius/coffee/blob/master/LICENSE
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
 ##############################################################################
 
 function usage() {
     cat <<EOF
-Execute a command after loading the coffee environment and write its output to
+Execute a command after loading the common environment and write its output to
 a log file.
 
 Usage: ${SCRIPTNAME} [OPTIONS] JOBNAME COMMAND
@@ -22,27 +22,27 @@ Options:
                         arguments.
 
   -t, --timeout=TIMEOUT Maximum runtime of the job. [Default=unlimited]
-  -k, --tokendir=PATH   Directory in which to create the token file. [Default=\$COFFEE_TOKDIR]
-  -l, --logdir=PATH     Directory in which to create the log file. [Default=\$COFFEE_LOGDIR]
+  -k, --tokendir=PATH   Directory in which to create the token file. [Default=\$WORKDIR/token]
+  -l, --logdir=PATH     Directory in which to create the log file. [Default=\$WORKDIR/log]
   -f, --force           Run even if the token from a previous run still exists.
   -k, --kill            Kill the job if it's still running after TIMEOUT.
 
 Environment Variables:
-  COFFEE_LOGDIR         The default directory in which to create the log file.
-  COFFEE_TOKDIR         The default directory in which to create the token file
-                        when the script starts.  The token is removed upon the
-                        successful termination of COMMAND.
+  WORKDIR               The default directory under with logs and tokens are
+                        created.  Logs are created under \$WORKDIR/log and the
+                        tokens under \$WORKDIR/token.  The token is removed
+                        upon the successful termination of COMMAND.
 
 Files:
-  \$COFFEE_LOGDIR/JOBNAME-YYYYMMDD_hh:mm:ss.log
+  \$WORKDIR/log/JOBNAME-YYYYMMDD_hh:mm:ss.log
                         The default name of the logfile, where YYYYMMDD_hh:mm:ss
                         is the date and time of when ${SCRIPTNAME} is started.
 
-  \$COFFEE_TOKDIR/${SCRIPTNAME}/JOBNAME.token
+  \$WORKDIR/token/${SCRIPTNAME}/JOBNAME.token
                         The default name of the token file.
 
 Example
-  00 00 * * * "\$HOME/coffee/coffee/bin/cronlogger" -t "10 minutes" CRON_FILELIST 'find "\$HOME" -type f'
+  00 00 * * * "${DPM}/common/bin/cronlogger" -t "10 minutes" CRON_FILELIST 'find "\$HOME" -type f'
 
 EOF
 }
@@ -65,8 +65,8 @@ source "getopt.sh" || exit 1
 
 SCRIPTNAME=$(basename "${BASH_SOURCE}")
 SCRIPTSTART=$(date)
-TOKENDIR=$COFFEE_TOKDIR
-LOGDIR=$COFFEE_LOGDIR
+TOKENDIR=$WORKDIR/token
+LOGDIR=$WORKDIR/log
 TIMEOUT=""
 FORCE=0
 KILL=0
@@ -145,7 +145,7 @@ function cronlogger() {
 
     echo "$jobname cronjob logfile is $logfile"
 
-    mkdir -p $(dirname "$logfile") \
+    mkdir -p "$(dirname "$logfile")" \
     && run "$jobname" "$command" >& "$logfile"
 }
 
@@ -210,7 +210,7 @@ function mktoken() {
         exit 1
     fi
 
-    mkdir -p $(dirname "$tokenfile") \
+    mkdir -p "$(dirname "$tokenfile")" \
     && echo "$TIMEOUT" > "$tokenfile"
 }
 

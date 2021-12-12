@@ -1,42 +1,34 @@
 ##############################################################################
-# COFFEE: Unix utilities I use way too much
-# https://github.com/markuskimius/coffee
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
 #
-# Copyright (c)2020 Mark K. Kim
-# Released under the Apache license 2.0
-# https://github.com/markuskimius/coffee/blob/master/LICENSE
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
 ##############################################################################
 
-[[ -n $POSIXLY_CORRECT ]] && echo "cannot use coffee in posix mode" 1>&2 && return
+[[ -n "$POSIXLY_CORRECT" ]] && echo "cannot use common in posix mode" 1>&2 && exit 1
 
-export COFFEE=${HOME}/work
-export COFFEE_LOGDIR=${COFFEE_LOGDIR-${COFFEE}/log}
-export COFFEE_TOKDIR=${COFFEE_TOKDIR-${COFFEE}/token}
 
-COFFEE_CONFIGS=(
-    ~/.coffeerc
-    /usr/local/etc/coffeerc
-    /usr/etc/coffeerc
-    /etc/coffeerc
+##############################################################################
+# GLOBALS
+
+export WORKDIR=${HOME}/work
+
+__COMMON_CONFIGS=(
+    ~/.commonrc
+    /usr/local/etc/commonrc
+    /usr/etc/commonrc
+    /etc/commonrc
 )
 
 
-function settitle() {
-    TITLE="${*-}"
-
-    if (( ! $# )); then
-        TITLE="${USER-$(whoami)}@${HOSTNAME-$(hostname)}"
-    fi
-
-    printf "\e]0;%s\a" "$TITLE"
-}
-
-
-for coffee_file in "${COFFEE_CONFIGS[@]}"; do
-    if [[ -e "$file" ]]; then
-        source "$file"
+for __common_file in "${COMMON_CONFIGS[@]}"; do
+    if [[ -e "$__common_file" ]]; then
+        source "$__common_file"
         break
     fi
-
-    unset coffee_file
 done
+
+unset __common_file
+unset __COMMON_CONFIGS

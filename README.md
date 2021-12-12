@@ -1,5 +1,5 @@
-# coffee
-Unix utilities I use way too much
+# common
+Unix utilities
 
 
 ## Like what?
@@ -24,11 +24,11 @@ Unix utilities I use way too much
 
 ## Installation
 
-Coffee requires [dpm].  Install dpm first then run the following command to
-install coffee.
+Common requires [dpm].  Install dpm first then run the following command to
+install common.
 
 ```bash
-$ dpm install https://github.com/markuskimius/coffee.git
+$ dpm install https://github.com/markuskimius/common.git
 ```
 
 
@@ -37,6 +37,6 @@ $ dpm install https://github.com/markuskimius/coffee.git
 [Apache 2.0]
 
 
-[Apache 2.0]: <https://github.com/markuskimius/coffee/blob/master/LICENSE>
+[Apache 2.0]: <https://github.com/markuskimius/common/blob/master/LICENSE>
        [dpm]: <https://github.com/markuskimius/dpm>
 

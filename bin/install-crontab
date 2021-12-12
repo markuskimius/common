@@ -1,12 +1,12 @@
 #!/bin/bash
 
 ##############################################################################
-# COFFEE: Unix utilities I use way too much
-# https://github.com/markuskimius/coffee
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
 #
-# Copyright (c)2020 Mark K. Kim
-# Released under the Apache license 2.0
-# https://github.com/markuskimius/coffee/blob/master/LICENSE
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
 ##############################################################################
 
 function usage() {
@@ -61,7 +61,7 @@ function install_crontab() {
     (( VERBOSE )) && crontab -l
 
     (( VERBOSE )) && header "INSTALLING NEW CRONTAB"
-    for file in "${CAFE-$DPM}"/*/etc/crontab; do
+    for file in "${DPM}"/*/etc/crontab; do
         if [[ -e "$file" ]]; then
             echo "Found ${file} ..."
             crontabs+=( "$file" )

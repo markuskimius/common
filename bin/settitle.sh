@@ -6,3 +6,21 @@
 # Released under GNU General Public License version 2.
 # https://github.com/markuskimius/common/blob/master/LICENSE
 ##############################################################################
+
+function settitle() {
+    TITLE="${*-}"
+
+    if (( ! $# )); then
+        TITLE="${USER-$(whoami)}@${HOSTNAME-$(hostname)}"
+    fi
+
+    printf "\e]0;%s\a" "$TITLE"
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+if (( ${#BASH_SOURCE[@]} == 1 )); then
+    settitle "$@"
+fi
