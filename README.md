@@ -34,9 +34,9 @@ $ dpm install https://github.com/markuskimius/common.git
 
 ## License
 
-[Apache 2.0]
+[GPLv2]
 
 
-[Apache 2.0]: <https://github.com/markuskimius/common/blob/master/LICENSE>
-       [dpm]: <https://github.com/markuskimius/dpm>
+[GPLv2]: <https://github.com/markuskimius/common/blob/main/LICENSE>
+  [dpm]: <https://github.com/markuskimius/dpm>
 

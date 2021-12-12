@@ -4,7 +4,7 @@
 #
 # Copyright (c)2020-2021 Mark Kim
 # Released under GNU General Public License version 2.
-# https://github.com/markuskimius/common/blob/master/LICENSE
+# https://github.com/markuskimius/common/blob/main/LICENSE
 ##############################################################################
 
 function settitle() {
