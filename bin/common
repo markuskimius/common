@@ -1,0 +1,148 @@
+#!/bin/bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/main/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Usage: ${SCRIPTNAME} [OPTIONS] COMMAND [ARGUMENTS]
+
+COMMAND:
+  cfg [FILENAME]        Read FILENAME and print its consolidated output.  If
+                        the FILENAME contains no path separator, it is assumed
+                        to be a file in \$CAFE/*/etc.  The FILENAME may be a
+                        glob.
+
+  test                  Test the environment to ensure it has all dependencies
+                        required by COMMON.
+
+  python3 [ARGUMENTS]   Call python3 with [ARGUMENTS].  If the python3 is not
+                        installed, python is called instead.
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+SCRIPTNAME=$(basename "$BASH_SOURCE")
+
+
+function main() {
+    local command=()
+    local isok=1
+
+    # Execute the command
+    case "$1" in
+        cfg)            action=( cfg-command       ) && shift ;;
+        python3)        action=( python3-command   ) && shift ;;
+        test)           action=( test-command      ) && shift ;;
+        help)           action=( usage             ) && shift ;;
+        *)              printf "%s: Invalid command\n" "$1" 1>&2
+                        isok=0                              ;;
+    esac
+
+    # Sanity check
+    if (( ! isok )); then
+        usage 1>&2
+        exit 1
+    fi
+
+    "${action[@]}" "$@"
+}
+
+
+function cfg-command() {
+    python3-command "${DPM}/common/lib/common_cfg.py" "$@"
+}
+
+
+function python3-command() {
+    local real=$(command -v python3 || command -v python)
+
+    # Sanity check
+    if [[ -z "$real" ]]; then
+        printf "python3 not installed\n" 1>&2
+        return 1
+    fi
+
+    exec "$real" "$@"
+}
+
+
+function test-command() {
+    source "colorize.sh" || exit 1
+
+    local commands=( cat crontab env git grep hostname jq netstat ps readlink sort tac timeout tput whoami )
+    local vars=( DPM HOME HOSTNAME USER WORKDIR )
+    local isok=1
+    local tmp
+
+    function checking() {
+        printf "%-43s" "Checking $1 ..."
+    }
+
+    function pass() {
+        printf "["
+        colorize green PASS 1
+        printf "]\n"
+    }
+
+    function fail() {
+        printf "["
+        colorize red FAIL 1
+        printf "]\n"
+        isok=0
+    }
+
+    # variables
+    for tmp in "${vars[@]}"; do
+        checking "environment variable \$$tmp"
+        declare -p "$tmp" &>/dev/null && pass || fail
+    done
+
+    # commands
+    for tmp in "${commands[@]}"; do
+        checking "command $tmp"
+        command -v "$tmp" &>/dev/null && pass || fail
+    done
+
+    # bash 4
+    if true; then
+        checking "bash is version 4 or later"
+        (( "$(bash -c 'printf "%s" "${BASH_VERSINFO[0]}"')" >= 4 )) && pass || fail
+    fi
+
+    # enhanced getopt
+    if true; then
+        checking "getopt is enhanced"
+
+        command -v getopt >/dev/null && getopt -T &>/dev/null
+        (( $? == 4 )) && pass || fail
+    fi
+
+    # python 3
+    if true; then
+        local version=$(python3-command --version 2>/dev/null)
+        local number=${version##* }
+        local major=${number%%.*}
+
+        checking "python is version 3"
+        [[ -n "$major" ]] && (( major == 3 )) && pass || fail
+    fi
+
+    (( isok ))
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"

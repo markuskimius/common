@@ -7,6 +7,9 @@
 # https://github.com/markuskimius/common/blob/main/LICENSE
 ##############################################################################
 
+declare -F timestamp >/dev/null && exit
+
+
 #
 # Stamp every line of input with the current time.  It uses the `ts` command if
 # available, otherwise uses a custom function.

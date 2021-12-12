@@ -7,6 +7,9 @@
 # https://github.com/markuskimius/common/blob/main/LICENSE
 ##############################################################################
 
+declare -F settitle >/dev/null && exit
+
+
 function settitle() {
     TITLE="${*-}"
 
