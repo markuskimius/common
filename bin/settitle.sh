@@ -24,3 +24,6 @@ function settitle() {
 if (( ${#BASH_SOURCE[@]} == 1 )); then
     settitle "$@"
 fi
+
+
+# vim:ft=bash

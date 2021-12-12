@@ -1,5 +1,3 @@
-#!/bin/bash
-
 ##############################################################################
 # COMMON: Unix utilities
 # https://github.com/markuskimius/common
@@ -32,3 +30,6 @@ function timestamp() {
 if (( ${#BASH_SOURCE[@]} == 1 )); then
     timestamp "$@"
 fi
+
+
+# vim:ft=bash

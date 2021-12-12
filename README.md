@@ -8,7 +8,7 @@ Unix utilities
 * `body` - filter all but the first line of text.
 * `grep1` - grep that always matches the first line of a file.
 * `hi` - highlight text matching regex in a file.
-* `nu` - cat with line number numbers.
+* `nu` - cat with line numbers.
 * `un` - cat with reverse line numbers.
 * `open` - open a file or the Finder/Explorer window from the macOS or Cygwin
   terminal.
