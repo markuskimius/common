@@ -1,0 +1,47 @@
+#!/bin/bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/master/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Find, process, and print a JSON config file in DPM packages.
+
+Usage: ${SCRIPTNAME} [FILENAME]
+
+OPTIONS:
+  FILENAME              FILENAME is read and its consolidated output is
+                        printed.  If the FILENAME contains no path separator,
+                        it is assumed to be a file in \$DPM/*/etc.  The
+                        FILENAME may be a glob.
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+SCRIPTNAME=$(basename "$BASH_SOURCE")
+
+
+function main() {
+    "$(python-command)" "${DPM}/common/lib/common_cfg.py" "$@"
+}
+
+
+function python-command() {
+    command -v python3 || command -v python
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"

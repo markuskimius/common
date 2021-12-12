@@ -24,7 +24,7 @@ WORKDIR = os.getenv('WORKDIR', '.')
 INDENT = None
 
 def create(*args):
-    cfg = CafeCfg()
+    cfg = CommonCfg()
     cfg.add_filter(ImportFilter())
     cfg.add_filter(PreloadFilter())
     cfg.add_filter(AccountFilter())
@@ -40,7 +40,7 @@ def create(*args):
 ##############################################################################
 # CLASSES
 
-class CafeCfg:
+class CommonCfg:
     def __init__(self):
         self.node = JsonNode()
         self.depths = []
