@@ -82,7 +82,7 @@ function test-command() {
 
     local commands=(
         basename cat crontab dirname env git grep hostname jq netstat ps
-        readlink sort tac timeout tput whoami
+        sort tac timeout tput whoami
     )
     local vars=( DPM HOME HOSTNAME USER WORKDIR )
     local isok=1
@@ -129,6 +129,19 @@ function test-command() {
 
         command -v getopt >/dev/null && getopt -T &>/dev/null
         (( $? == 4 )) && pass || fail
+    fi
+
+    # realpath
+    if true; then
+        checking "realpath or readlink -f"
+
+        if command -v realpath >/dev/null; then
+            pass
+        elif command -v readlink >/dev/null && readlink -f . &>/dev/null; then
+            pass
+        else
+            fail
+        fi
     fi
 
     # python 3

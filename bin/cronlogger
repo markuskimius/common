@@ -49,16 +49,6 @@ EOF
 
 
 ##############################################################################
-# BOOTSTRAP
-
-SCRIPTDIR=$(dirname "$(readlink -f "${BASH_SOURCE}")")
-
-if [[ -f "${SCRIPTDIR}/../etc/bashrc" ]]; then
-    source "${SCRIPTDIR}/../etc/bashrc"
-fi
-
-
-##############################################################################
 # PROGRAM BEGINS HERE
 
 source "getopt.sh" || exit 1
