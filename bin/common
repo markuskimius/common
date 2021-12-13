@@ -22,6 +22,9 @@ COMMAND:
   test                  Test the environment to ensure it has all dependencies
                         required by COMMON.
 
+  bashrc                Generate and output the name of the bashrc to source by
+                        cronjobs.
+
   python3 [ARGUMENTS]   Call python3 with [ARGUMENTS].  If the python3 is not
                         installed, python is called instead.
 
@@ -32,27 +35,42 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
+source "logger.sh" || exit 1
+
+
 SCRIPTNAME=$(basename -- "$BASH_SOURCE")
+SCRIPTPATH=$BASH_SOURCE
+SCRIPTARGV=( "$@" )
 
 
 function main() {
     local command=()
+    local lock=0
     local isok=1
 
     # Execute the command
     case "$1" in
-        cfg)            action=( cfg-command       ) && shift ;;
-        python3)        action=( python3-command   ) && shift ;;
-        test)           action=( test-command      ) && shift ;;
-        help)           action=( usage             ) && shift ;;
-        *)              printf "%s: Invalid command\n" "$1" 1>&2
+        cfg)            shift && action=( cfg-command       )           ;;
+        test)           shift && action=( test-command      )           ;;
+        bashrc)         shift && action=( bashrc-command    ) && lock=1 ;;
+        python3)        shift && action=( python3-command   )           ;;
+        help)           shift && action=( usage             )           ;;
+        *)              logger FAIL "${1}: Invalid command"
                         isok=0                              ;;
     esac
+
+    # Ensure core dependencies are met
+    ensure-deps || isok=0
 
     # Sanity check
     if (( ! isok )); then
         usage 1>&2
         exit 1
+    fi
+
+    # Lock
+    if (( lock )); then
+        lock-workdir || exit 1
     fi
 
     "${action[@]}" "$@"
@@ -64,16 +82,25 @@ function cfg-command() {
 }
 
 
-function python3-command() {
-    local real=$(command -v python3 || command -v python)
+function bashrc-command() {
+    local dpm=$(command -v dpm)
+    local bashrc="${WORKDIR}/.bashrc"
+    local isok=1
 
     # Sanity check
-    if [[ -z "$real" ]]; then
-        printf "python3 not installed\n" 1>&2
-        return 1
+    [[ -z "$dpm"     ]] && logger ERROR "\$dpm not set" && isok=0
+    [[ -z "$DPM"     ]] && logger ERROR "\$DPM not set" && isok=0
+    [[ -z "$WORKDIR" ]] && logger ERROR "\$WORKDIR not set" && isok=0
+
+    if (( isok )); then
+        printf "[[ -z \"\${DPM-}\" ]] && source <(%q sourceme)\n" "$dpm" > "$bashrc" || isok=0
     fi
 
-    exec "$real" "$@"
+    if (( isok )); then
+        printf "%s\n" "$bashrc"
+    fi
+
+    (( isok ))
 }
 
 
@@ -155,6 +182,67 @@ function test-command() {
     fi
 
     (( isok ))
+}
+
+
+function python3-command() {
+    local real=$(command -v python3 || command -v python)
+
+    # Sanity check
+    if [[ -z "$real" ]]; then
+        logger FAIL "python3 not installed"
+        return 1
+    fi
+
+    exec "$real" "$@"
+}
+
+
+##############################################################################
+# HELPER FUNCTIONS
+
+function ensure-deps() {
+    local isok=1
+
+    [[ -z "$WORKDIR" ]] && logger ERROR "\$WORKDIR not set" && isok=0
+    [[ -n "$WORKDIR" ]] && mkdir -p "$WORKDIR" || isok=0
+
+    (( isok ))
+}
+
+
+function lock-workdir() {
+    local lockfile="${WORKDIR}/.lock"
+    local locked=0
+
+    #
+    # 'flock' is preferred but (1) it requires restarting the script and (2) it
+    # may not be available on some systems.  This script must be written such
+    # that (1) is not an issue.
+    #
+    # As for (2), we fall back on 'shlock' if 'flock' is not available.
+    # 'shlock' is less preferred because it may run into a race condition on
+    # some platforms.  Also, as with 'flock', it may not be available on some
+    # systems.
+    #
+
+    if command -v flock >/dev/null; then
+        if [[ "$FLOCKER" == "$lockfile" ]]; then
+            locked=1
+        else
+            export FLOCKER=$lockfile
+            exec flock "$lockfile" "$SCRIPTPATH" "${SCRIPTARGV[@]}"
+        fi
+    elif command -v shlock >/dev/null; then
+        while true; do
+            shlock -p $$ -f "$lockfile" && locked=1 && break
+            sleep 1
+        done
+    else
+        logger FAIL "No locking command available"
+    fi
+
+    (( locked ))
 }
 
 

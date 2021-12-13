@@ -42,7 +42,7 @@ Files:
                         The default name of the token file.
 
 Example
-  00 00 * * * "${DPM}/common/bin/cronlogger" -t "10 minutes" CRON_FILELIST 'find "\$HOME" -type f'
+  00 00 * * * BASH_ENV=${HOME}/work/.bashrc ${DPM}/common/bin/cronlogger -t "10 minutes" CRON_FILELIST 'find "\$HOME" -type f'
 
 EOF
 }
