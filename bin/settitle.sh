@@ -7,7 +7,7 @@
 # https://github.com/markuskimius/common/blob/main/LICENSE
 ##############################################################################
 
-declare -F settitle >/dev/null && exit
+declare -F settitle >/dev/null && return
 
 
 function settitle() {

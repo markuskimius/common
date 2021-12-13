@@ -7,7 +7,7 @@
 # https://github.com/markuskimius/common/blob/main/LICENSE
 ##############################################################################
 
-declare -F colorize >/dev/null && exit
+declare -F colorize >/dev/null && return
 
 
 function colorize() {

@@ -7,7 +7,7 @@
 # https://github.com/markuskimius/common/blob/main/LICENSE
 ##############################################################################
 
-declare -F logger >/dev/null && exit
+declare -F logger >/dev/null && return
 
 source "colorize.sh" || exit 1
 

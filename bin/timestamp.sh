@@ -7,7 +7,7 @@
 # https://github.com/markuskimius/common/blob/main/LICENSE
 ##############################################################################
 
-declare -F timestamp >/dev/null && exit
+declare -F timestamp >/dev/null && return
 
 
 #

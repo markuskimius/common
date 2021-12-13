@@ -7,7 +7,7 @@
 # https://github.com/markuskimius/common/blob/main/LICENSE
 ##############################################################################
 
-declare -F realpath-sh >/dev/null && exit
+declare -F realpath-sh >/dev/null && return
 
 
 function realpath-sh() {
