@@ -11,7 +11,7 @@
 
 
 ##############################################################################
-# GLOBALS
+# DEFAULTS
 
 export WORKDIR=${HOME}/work
 
@@ -22,6 +22,20 @@ __COMMON_CONFIGS=(
     /etc/commonrc
 )
 
+
+##############################################################################
+# INTERACTIVE ONLY
+
+if [[ "$-" == *i* ]]; then
+    alias vim &>/dev/null     || alias vim='vim -u "${DPM}/common/etc/vimrc"'
+    alias view &>/dev/null    || alias view='vim -Ru "${DPM}/common/etc/vimrc"'
+    alias vimdiff &>/dev/null || alias vimdiff='vim -du "${DPM}/common/etc/vimrc"'
+    alias gvim &>/dev/null    || alias gvim='gvim -u "${DPM}/common/etc/vimrc"'
+fi
+
+
+##############################################################################
+# USER/SYSTEM OVERRIDES
 
 for __common_file in "${COMMON_CONFIGS[@]}"; do
     if [[ -e "$__common_file" ]]; then

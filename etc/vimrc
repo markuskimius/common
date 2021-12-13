@@ -1,0 +1,37 @@
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" COMMON: Unix utilities
+" https://github.com/markuskimius/common
+"
+" Copyright (c)2020-2021 Mark Kim
+" Released under GNU General Public License version 2.
+" https://github.com/markuskimius/common/blob/main/LICENSE
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+if !exists('__common_sourced')
+    let __common_sourced=[ expand('%:p') ]
+endif
+
+" add all packs in $DPM
+set packpath+=$DPM/common/share/vim
+
+" source $DPM/*/etc/vimrc except this script
+for file in globpath($DPM, '*/etc/vimrc', 0, 1)
+    if index(__common_sourced, file) < 0
+    	let __common_sourced+=[ file ]
+
+    	exe 'source' file
+    endif
+endfor
+
+" source the user's startup script if one exists
+for file in [ $HOME . '/.vim/vimrc', $HOME . '/.vimrc' ]
+    if filereadable(file)
+        if index(__common_sourced, file) < 0
+        	let __common_sourced+=[ file ]
+
+            exe 'source ' file
+        endif
+
+        break
+    endif
+endfor
