@@ -93,7 +93,7 @@ function bashrc-command() {
     [[ -z "$WORKDIR" ]] && logger ERROR "\$WORKDIR not set" && isok=0
 
     if (( isok )); then
-        printf "[[ -z \"\${DPM-}\" ]] && eval $\"(%q setup)\"\n" "$dpm" > "$bashrc" || isok=0
+        printf "[[ -z \"\${DPM-}\" ]] && eval \"\$(%q setup)\"\n" "$dpm" > "$bashrc" || isok=0
     fi
 
     if (( isok )); then
