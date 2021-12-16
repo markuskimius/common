@@ -14,6 +14,7 @@
 # DEFAULTS
 
 export WORKDIR=${HOME}/work
+export PS4='+${FUNCNAME--}() at ${BASH_SOURCE}:${LINENO}: '
 
 __COMMON_CONFIGS=(
     ~/.commonrc
