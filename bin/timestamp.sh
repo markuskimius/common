@@ -27,6 +27,23 @@ function timestamp() {
 }
 
 
+#
+# Stamp every line of input with the number of seconds since epoch with
+# subsecond data.
+#
+function profile-ts() {
+    local line
+
+    if command -v ts >/dev/null; then
+        ts '%.s'
+    else
+        while IFS= read -r line; do
+            printf "%s %s\n" "$(date '+%s.%N')" "$line"
+        done
+    fi
+}
+
+
 ##############################################################################
 # ENTRY POINT
 
