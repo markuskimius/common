@@ -25,15 +25,23 @@ function logger() {
     local level=$1 && shift
     local line
 
+    # Center the level to 4 characters
+    case "${#level}" in
+        1)  level=$(printf "  %s " "${level}") ;;
+        2)  level=$(printf " %s " "${level}")  ;;
+        3)  level=$(printf " %s" "${level}")   ;;
+        *)  level=$(printf "%s" "${level::4}") ;;
+    esac
+
     # Print arguments or stdin.
     while IFS= read -r line; do
-        line=$(printf "%*s[%4s] %s" "$LOGGER_INDENT" "" "${level::4}" "$line")
+        line=$(printf "%*s[%4s] %s" "$LOGGER_INDENT" "" "$level" "$line")
 
         case "$level" in
-            GOOD)   colorize green  "$line" 1      ;;
-            WARN)   colorize yellow "$line" 2 1>&2 ;;
-            FAIL)   colorize red    "$line" 2 1>&2 ;;
-            *)      printf "%s\n" "$line" ;;
+            " OK ")  colorize green  "$line" 1      ;;
+            "WARN")  colorize yellow "$line" 2 1>&2 ;;
+            "FAIL")  colorize red    "$line" 2 1>&2 ;;
+            *)       printf "%s\n" "$line" ;;
         esac
     done < <( (( $# )) && printf "%s\n" "$@" || cat )
 }
