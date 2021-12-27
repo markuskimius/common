@@ -25,10 +25,11 @@ Unix utilities
 ## Installation
 
 Common requires [dpm].  Install dpm first then run the following command to
-install common.
+install and activate common:
 
 ```bash
 $ dpm install https://github.com/markuskimius/common.git
+$ dpm activate common
 ```
 
 
