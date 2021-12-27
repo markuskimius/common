@@ -32,6 +32,8 @@ $ dpm install https://github.com/markuskimius/common.git
 $ dpm activate common
 ```
 
+Then log out and log back in.
+
 
 ## License
 
