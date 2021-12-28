@@ -14,7 +14,7 @@ declare -F template >/dev/null && return
 # FUNCTIONS
 
 function template() {
-    eval "cat <<__COMMON_TEMPLATE__$$
+    bash -c eval\ "cat <<__COMMON_TEMPLATE__$$
 $(cat "$@")
 __COMMON_TEMPLATE__$$"
 }
