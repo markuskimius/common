@@ -208,6 +208,7 @@ function python3-command() {
 
 function crontab-command() {
     source "getopt.sh" || exit 1
+
     local OPTOPT OPTARG
     local command=( crontab-cat )
     local isok=1
@@ -231,6 +232,8 @@ function crontab-command() {
 
 
 function crontab-cat() {
+    source "template.sh" || exit 1
+
     local activefile="${DPM}/.active"
     local active=()
     local pkgname
@@ -249,11 +252,11 @@ function crontab-cat() {
 
     # Cat their crontab contents
     for pkgname in "${active[@]}"; do
-        crontab="${DPM}/${pkgname}/etc/crontab"
+        crontab="${DPM}/${pkgname}/etc/crontab.shdoc"
 
         printf "%s\n" "$(repeat "#" 40)"
         printf "# Package '%s'\n" "$pkgname"
-        cat "$crontab"
+        template "$crontab"
         printf "\n"
 
         (( count+=1 ))
