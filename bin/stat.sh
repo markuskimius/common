@@ -12,20 +12,23 @@ declare -F stat-sh >/dev/null && return
 
 function stat-sh() {
     local OPTIND OPTERR OPTARG opt
-    local gnuformat=()
-    local bsdformat=()
+    local gnuformat=""
+    local bsdformat=""
 
-    while getopts "amc" opt; do
+    while getopts "nugamc" opt; do
         case "$opt" in
-            a)  gnuformat+=( -c "%X" ) && bsdformat+=( -f "%a" ) ;;
-            m)  gnuformat+=( -c "%Y" ) && bsdformat+=( -f "%m" ) ;;
-            c)  gnuformat+=( -c "%Z" ) && bsdformat+=( -f "%c" ) ;;
+            n)  gnuformat+=" %n" && bsdformat+=" %N" ;;
+            u)  gnuformat+=" %U" && bsdformat+=" %u" ;;
+            g)  gnuformat+=" %G" && bsdformat+=" %g" ;;
+            a)  gnuformat+=" %X" && bsdformat+=" %a" ;;
+            m)  gnuformat+=" %Y" && bsdformat+=" %m" ;;
+            c)  gnuformat+=" %Z" && bsdformat+=" %c" ;;
         esac
     done
     shift $((OPTIND-1))
 
-    stat "${gnuformat[@]}" "$@" 2>&1 \
-    || stat "${bsdformat[@]}" "$@" 2>&1
+    stat -c "${gnuformat:1}" "$@" 2>&1 \
+    || stat -f "${bsdformat:1}" "$@" 2>&1
 }
 
 
