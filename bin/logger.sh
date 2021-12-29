@@ -9,13 +9,11 @@
 
 declare -F logger >/dev/null && return
 
-source "colorize.sh" || exit 1
-
 
 ##############################################################################
 # GLOBALS
 
-LOGGER_INDENT=0
+LOGGER_ENABLE=${LOGGER_ENABLE-INFO WARNING ERROR}
 
 
 ##############################################################################
@@ -23,41 +21,29 @@ LOGGER_INDENT=0
 
 function logger() {
     local level=$1 && shift
-    local line
+    local is_enabled=0
 
-    # Center the level to 4 characters
-    case "${#level}" in
-        1)  level=$(printf "  %s " "${level}") ;;
-        2)  level=$(printf " %s " "${level}")  ;;
-        3)  level=$(printf " %s" "${level}")   ;;
-        *)  level=$(printf "%s" "${level::4}") ;;
-    esac
+    # Log only if the log level is enabled
+    if [[ " $LOGGER_ENABLE " == *" $level "* ]]; then
+        is_enabled=1
+    fi
 
-    # Print arguments or stdin.
-    while IFS= read -r line; do
-        line=$(printf "%*s[%4s] %s" "$LOGGER_INDENT" "" "$level" "$line")
+    # Print header
+    if (( is_enabled )); then
+        printf "LOGGER %s on %s at %s:%s in %s():\n" "$level" "$(date "+%Y%m%d %H:%M:%S.%N %Z")" "${BASH_SOURCE[1]-(none)}" "${BASH_LINENO[0]-0}" "${FUNCNAME[1]-main}"
+    fi
 
-        case "$level" in
-            " OK ")  colorize green  "$line" 1      ;;
-            "WARN")  colorize yellow "$line" 2 1>&2 ;;
-            "FAIL")  colorize red    "$line" 2 1>&2 ;;
-            *)       printf "%s\n" "$line" ;;
-        esac
-    done < <( (( $# )) && printf "%s\n" "$@" || cat )
-}
-
-
-function logger-push() {
-    local count=${1-1}
-
-    (( LOGGER_INDENT += 2 * count )) || :
-}
-
-
-function logger-pop() {
-    local count=${1-1}
-
-    (( LOGGER_INDENT -= 2 * count )) || :
+    # Print arguments or stdin
+    if   (( is_enabled && $# )); then
+        printf "%s\n" "$@"
+        echo
+    elif (( is_enabled )); then
+        cat
+        echo
+    elif (( $# == 0 )); then
+        # Not enabled but we're supposed to read from stdin -> consume stdin
+        cat >/dev/null
+    fi
 }
 
 
