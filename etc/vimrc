@@ -17,9 +17,9 @@ set packpath+=$DPM/common/share/vim
 " source $DPM/*/etc/vimrc except this script
 for file in globpath($DPM, '*/etc/vimrc', 0, 1)
     if index(__common_sourced, file) < 0
-    	let __common_sourced+=[ file ]
+        let __common_sourced+=[ file ]
 
-    	exe 'source' file
+        exe 'source' file
     endif
 endfor
 
@@ -27,7 +27,7 @@ endfor
 for file in [ $HOME . '/.vim/vimrc', $HOME . '/.vimrc' ]
     if filereadable(file)
         if index(__common_sourced, file) < 0
-        	let __common_sourced+=[ file ]
+            let __common_sourced+=[ file ]
 
             exe 'source ' file
         endif
