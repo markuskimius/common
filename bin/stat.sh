@@ -15,20 +15,22 @@ function stat-sh() {
     local gnuformat=""
     local bsdformat=""
 
-    while getopts "nugamc" opt; do
+    while getopts "nuUgGamc" opt; do
         case "$opt" in
-            n)  gnuformat+=" %n" && bsdformat+=" %N" ;;
-            u)  gnuformat+=" %U" && bsdformat+=" %u" ;;
-            g)  gnuformat+=" %G" && bsdformat+=" %g" ;;
-            a)  gnuformat+=" %X" && bsdformat+=" %a" ;;
-            m)  gnuformat+=" %Y" && bsdformat+=" %m" ;;
-            c)  gnuformat+=" %Z" && bsdformat+=" %c" ;;
+            n)  gnuformat+=" %n" && bsdformat+=" %N"  ;;
+            u)  gnuformat+=" %u" && bsdformat+=" %u"  ;;
+            U)  gnuformat+=" %U" && bsdformat+=" %Su" ;;
+            g)  gnuformat+=" %g" && bsdformat+=" %g"  ;;
+            G)  gnuformat+=" %G" && bsdformat+=" %Sg" ;;
+            a)  gnuformat+=" %X" && bsdformat+=" %a"  ;;
+            m)  gnuformat+=" %Y" && bsdformat+=" %m"  ;;
+            c)  gnuformat+=" %Z" && bsdformat+=" %c"  ;;
         esac
     done
     shift $((OPTIND-1))
 
-    stat -c "${gnuformat:1}" "$@" 2>&1 \
-    || stat -f "${bsdformat:1}" "$@" 2>&1
+    stat -c "${gnuformat:1}" "$@" 2>/dev/null \
+    || stat -f "${bsdformat:1}" "$@"
 }
 
 
