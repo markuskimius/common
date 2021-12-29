@@ -14,10 +14,11 @@ function usage() {
 Usage: ${SCRIPTNAME} [OPTIONS] COMMAND [ARGUMENTS]
 
 COMMAND:
-  cfg [FILENAME]        Read FILENAME and print its consolidated output.  If
-                        the FILENAME contains no path separator, it is assumed
-                        to be a file in \$CAFE/*/etc.  The FILENAME may be a
-                        glob.
+  cfg [CONFIG]          Read CONFIG and print its consolidated output.  If
+                        CONFIG contains no path separator (/) it is assumed to
+                        be a file in \$DPM/*/etc.  To read a file in the
+                        current directory, specify it as ./CONFIG.  CONFIG may
+                        also be a glob.  See CONFIG below for more information.
 
   test                  Test the environment to ensure it has all dependencies
                         required by COMMON.
@@ -25,15 +26,73 @@ COMMAND:
   bashrc                Generate and output the name of the bashrc to source by
                         cronjobs.
 
-  python3 [ARGUMENTS]   Call python3 with [ARGUMENTS].  If the python3 is not
+  python3 [ARGUMENTS]   Call python3 with [ARGUMENTS].  If python3 is not
                         installed, python is called instead.
 
-  crontab               Show the crontabs of active packages.
+  croncat               Output the consolidated crontab of all active packages.
+                        See CRONTAB below for more information.
 
-    -d,--diff           Diff the crontabs of active packages against the
-                        installed crontab.
+  cronset               Install the crontab of all active packages.
 
-    -i,--install        Install the crontabs of active packages.
+  crondiff [ARGUMENTS]  Diff the crontabs of all active packages against the
+                        installed crontab.  ARGUMENTS, if any, are passed to
+                        the DIFF command.
+
+CONFIG
+  CONFIG is a JSON file whose contents are interpreted by 'common cfg' if they
+  contain any of these special name-value pair patterns:
+
+    "#preload" : [ STATEMENTS ]
+                        STATEMENTS are executed by python3 before the rest of
+                        the CONFIG is parsed.  If any of the statements' result
+                        needs to be saved, save it as a member of 'self'.
+                        Example:
+
+                          "#preload" : [
+                            "import datetime",
+                            "self.now = datetime.datetime.now()"
+                          ]
+
+    "#include" : "CONFIG"
+    "#include" : [ CONFIGS ]
+                        Insert the contents of CONFIG or CONFIGS where these
+                        specials appear.
+
+    "!NAME" : "EXPRESSION"
+                        EXPRESSION is evaluated by python3 and is replaced by
+                        the result of the expression.  Also, !NAME is renamed
+                        to NAME.  Example:
+
+                          "!datetime" : "self.now.strftime('%Y-%m-%d_%H:%M:%S')"
+
+    "?EXPRESSION" : DATA
+                        Insert DATA if the python3 EXPRESSION evaluates to
+                        True, otherwise the node is removed.
+
+    "USER@HOST" : DATA
+                        Insert DATA only when 'common cfg' is run by USER on
+                        HOST.  Either HOST or USER may be omitted to insert
+                        DATA when the command is executed by USER on any host,
+                        or on HOST by any user, respectively.
+
+  The python3 environment under which EXPRESSIONS and STATEMENTS run define the
+  following variables:
+
+    DPM
+    WORKDIR
+
+CRONTAB
+  A package may include a crontab under "\$DPM/PKGNAME/etc/crontab.shdoc".  The
+  format of a .shdoc file is same as that of a BASH "Here Document"* without
+  the limit strings.  That is, environment variables may be embedded within it
+  as well as command output, using special characters such as the dollar sign
+  or a backticket, and special characters may be escaped with a backslash.
+  See the BASH documentation for more details on the Here Document.
+
+  * - https://tldp.org/LDP/abs/html/here-docs.html
+
+ENVIRONMENT VARIABLES:
+  DIFF                  The command used to show diff.  [Default=diff].
 
 EOF
 }
@@ -61,7 +120,9 @@ function main() {
         test)           shift && action=( test-command      )           ;;
         bashrc)         shift && action=( bashrc-command    ) && lock=1 ;;
         python3)        shift && action=( python3-command   )           ;;
-        crontab)        shift && action=( crontab-command   )           ;;
+        croncat)        shift && action=( croncat-command   )           ;;
+        cronset)        shift && action=( cronset-command   )           ;;
+        crondiff)       shift && action=( crondiff-command  )           ;;
         help)           shift && action=( usage             )           ;;
         *)              logger FAIL "${1}: Invalid command"
                         isok=0
@@ -206,32 +267,7 @@ function python3-command() {
 }
 
 
-function crontab-command() {
-    source "getopt.sh" || exit 1
-
-    local OPTOPT OPTARG
-    local command=( crontab-cat )
-    local isok=1
-
-    # Process arguments
-    while getopt-sh "di" "diff,install" "$@"; do
-        case "$OPTOPT" in
-            -d|--diff)    command=( crontab-diff )    ;;
-            -i|--install) command=( crontab-install ) ;;
-            *)            isok=0
-        esac
-    done
-
-    # Sanity check
-    if (( ! isok )); then
-        return 1
-    fi
-
-    "$command" "${OPTARG[@]}"
-}
-
-
-function crontab-cat() {
+function croncat-command() {
     source "template.sh" || exit 1
 
     local activefile="${DPM}/.active"
@@ -268,18 +304,18 @@ function crontab-cat() {
 }
 
 
-function crontab-diff() {
-    diff "$@" <(crontab -l) <(crontab-cat)
-}
-
-
-function crontab-install() {
+function cronset-command() {
     # Show the diff first
-    diff -u <(crontab -l) <(crontab-cat)
+    "${DIFF-diff}" -u <(crontab -l) <(croncat-command)
 
     # Install the new crontab
     logger INFO "Applying new crontab..."
-    crontab-cat | crontab -
+    croncat-command | crontab -
+}
+
+
+function crondiff-command() {
+    "${DIFF-diff}" "$@" <(crontab -l) <(croncat-command)
 }
 
 
