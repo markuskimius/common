@@ -57,8 +57,14 @@ function main() {
 
 
 function mancat() {
+    # Read from stdin if no filename
+    if (( $# == 0 )); then
+        set -- /dev/stdin
+    fi
+
     man -l "$@" 2>/dev/null \
-    || groff -t -e -mandoc -Tascii "$@" | (col -bx 2>/dev/null || cat)
+    || groff -t -e -mandoc -Tascii "$@"
+#    || groff -t -e -mandoc -Tascii "$@" | col -bx
 }
 
 
