@@ -157,9 +157,9 @@ function bashrc-command() {
     local isok=1
 
     # Sanity check
-    [[ -z "$dpm"     ]] && logger ERROR "\$dpm not set" && isok=0
-    [[ -z "$DPM"     ]] && logger ERROR "\$DPM not set" && isok=0
-    [[ -z "$WORKDIR" ]] && logger ERROR "\$WORKDIR not set" && isok=0
+    [[ -z "$dpm"     ]] && logger FAIL "\$dpm not set" && isok=0
+    [[ -z "$DPM"     ]] && logger FAIL "\$DPM not set" && isok=0
+    [[ -z "$WORKDIR" ]] && logger FAIL "\$WORKDIR not set" && isok=0
 
     if (( isok )); then
         printf "[[ -z \"\${DPM-}\" ]] && eval \"\$(%q setup)\"\n" "$dpm" > "$bashrc" || isok=0
@@ -328,7 +328,7 @@ function crondiff-command() {
 function ensure-deps() {
     local isok=1
 
-    [[ -z "$WORKDIR" ]] && logger ERROR "\$WORKDIR not set" && isok=0
+    [[ -z "$WORKDIR" ]] && logger FAIL "\$WORKDIR not set" && isok=0
     [[ -n "$WORKDIR" ]] && mkdir -p "$WORKDIR" || isok=0
 
     (( isok ))
