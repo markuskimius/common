@@ -289,6 +289,7 @@ function croncat-command() {
     # Cat their crontab contents
     for pkgname in "${active[@]}"; do
         crontab="${DPM}/${pkgname}/etc/crontab.shdoc"
+        [[ -r "$crontab" ]] || continue
 
         printf "%s\n" "$(repeat "#" 40)"
         printf "# Package '%s'\n" "$pkgname"
@@ -305,12 +306,14 @@ function croncat-command() {
 
 
 function cronset-command() {
+    local croncat=$(croncat-command)
+
     # Show the diff first
-    "${DIFF-diff}" -u <(crontab -l) <(croncat-command)
+    "${DIFF-diff}" -u <(crontab -l) <(printf "%s\n" "$croncat")
 
     # Install the new crontab
     logger INFO "Applying new crontab..."
-    croncat-command | crontab -
+    printf "%s\n" "$croncat" | crontab -
 }
 
 
