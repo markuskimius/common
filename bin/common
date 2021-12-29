@@ -101,9 +101,6 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-source "logger.sh" || exit 1
-
-
 SCRIPTNAME=$(basename -- "$BASH_SOURCE")
 SCRIPTPATH=$BASH_SOURCE
 SCRIPTARGV=( "$@" )
@@ -124,8 +121,7 @@ function main() {
         cronset)        shift && action=( cronset-command   )           ;;
         crondiff)       shift && action=( crondiff-command  )           ;;
         help)           shift && action=( usage             )           ;;
-        *)              logger FAIL "${1}: Invalid command"
-                        isok=0
+        *)              isok=0
     esac
 
     # Ensure core dependencies are met
@@ -157,9 +153,9 @@ function bashrc-command() {
     local isok=1
 
     # Sanity check
-    [[ -z "$dpm"     ]] && logger FAIL "\$dpm not set" && isok=0
-    [[ -z "$DPM"     ]] && logger FAIL "\$DPM not set" && isok=0
-    [[ -z "$WORKDIR" ]] && logger FAIL "\$WORKDIR not set" && isok=0
+    [[ -z "$dpm"     ]] && printf "dpm not found\n" 1>&2 && isok=0
+    [[ -z "$DPM"     ]] && printf "\$DPM not set\n" 1>&2 && isok=0
+    [[ -z "$WORKDIR" ]] && printf "\$WORKDIR not set\n" 1>&2 && isok=0
 
     if (( isok )); then
         printf "[[ -z \"\${DPM-}\" ]] && eval \"\$(%q setup)\"\n" "$dpm" > "$bashrc" || isok=0
@@ -259,7 +255,7 @@ function python3-command() {
 
     # Sanity check
     if [[ -z "$real" ]]; then
-        logger FAIL "python3 not installed"
+        printf "python3 not installed\n" 1>&2
         return 1
     fi
 
@@ -312,7 +308,7 @@ function cronset-command() {
     "${DIFF-diff}" -u <(crontab -l) <(printf "%s\n" "$croncat")
 
     # Install the new crontab
-    logger INFO "Applying new crontab..."
+    printf "Applying new crontab...\n"
     printf "%s\n" "$croncat" | crontab -
 }
 
@@ -328,7 +324,7 @@ function crondiff-command() {
 function ensure-deps() {
     local isok=1
 
-    [[ -z "$WORKDIR" ]] && logger FAIL "\$WORKDIR not set" && isok=0
+    [[ -z "$WORKDIR" ]] && printf "\$WORKDIR not set\n" 1>&2 && isok=0
     [[ -n "$WORKDIR" ]] && mkdir -p "$WORKDIR" || isok=0
 
     (( isok ))
@@ -363,7 +359,7 @@ function lock-workdir() {
             sleep 1
         done
     else
-        logger FAIL "No locking command available"
+        printf "No locking command available\n" 1>&2
     fi
 
     (( locked ))
