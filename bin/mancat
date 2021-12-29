@@ -57,9 +57,8 @@ function main() {
 
 
 function mancat() {
-    # groff -t -e -mandoc -Tascii "$@"
-    # groff -t -e -mandoc -Tascii "$@" | col -bx
-    man -l "$@"
+    man -l "$@" 2>/dev/null \
+    || groff -t -e -mandoc -Tascii "$@" | (col -bx 2>/dev/null || cat)
 }
 
 
