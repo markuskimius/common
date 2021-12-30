@@ -305,11 +305,11 @@ function cronset-command() {
     local croncat=$(croncat-command)
 
     # Show the diff first
-    "${DIFF-diff}" -u <(crontab -l) <(printf "%s\n" "$croncat")
+    "${DIFF-diff}" -u <(crontab -l) <(printf "%s\n\n" "$croncat")
 
     # Install the new crontab
     printf "Applying new crontab...\n"
-    printf "%s\n" "$croncat" | crontab -
+    printf "%s\n\n" "$croncat" | crontab -
 }
 
 
