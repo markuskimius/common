@@ -1,0 +1,159 @@
+#!/usr/bin/env bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/main/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Usage: ${SCRIPTNAME} [OPTIONS] CONFIG
+
+Options:
+  CONFIG                Configuration file for the monitor.
+
+  -p,--poll-period=SECONDS
+                        The polling period of the monitor modules.
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+source "getopt.sh" || exit 1
+
+declare -a MODULES=()
+declare -a COLNAMES=()
+declare -A COLNUM_BY_NAME=()
+declare POLL_PERIOD=30
+
+
+function main() {
+    local OPTOPT OPTARG
+    local isok=1
+
+    # Process options
+    while getopt-sh "p:h" "poll-period:,help" "$@"; do
+        case "$OPTOPT" in
+            -p|--poll-period) POLL_PERIOD=$OPTARG ;;
+            -h|--help)        usage && exit 0     ;;
+            *)                isok=0
+        esac
+    done
+
+    # Load config
+    set -o pipefail
+    load_config "${OPTARG[@]}" || isok=0
+
+    # Sanity check
+    if (( ! isok )); then
+        printf "Type '%s -h' for help\n" "$SCRIPTNAME" 1>&2
+        exit 1
+    fi
+
+    # Start monitoring
+    monitor
+}
+
+
+function load_config() {
+    local config=$(common cfg "$@")
+    local name module columns
+    local colnum
+    local isok=1
+
+    MODULES=( monitor-base )
+    COLNAMES=( TIMESTAMP )
+    COLNUM_BY_NAME=( [TIMESTAMP]=0 )
+    colnum=${#COLNAMES[@]}
+
+    while IFS=$'\002' read -r -d $'\000' name module columns; do
+        local colnames=()
+        local col
+
+        # Validate
+        [[ -z "$module" ]] && printf "%s\n" "Missing /monitor/${name}/module" 1>&2 && isok=0
+        [[ -z "$columns" ]] && printf "%s\n" "Missing /monitor/${name}/columns" 1>&2 && isok=0
+        (( isok )) || break
+
+        # Load the module
+        source "$module" || isok=0
+        MODULES+=( "${module%.sh}" )
+
+        # Load the column names
+        IFS=, read -ra colnames <<<"${columns:1}"
+        for col in "${colnames[@]}"; do
+            COLNAMES+=( "$col" )
+            COLNUM_BY_NAME[$col]=$(( colnum++ ))
+        done
+    done < <(printf "%s\n" "$config" | jq -j '.monitor | to_entries[] |
+        .key               , "\u0002",
+        .value.module //"" , "\u0002",
+        (
+            .value.columns[] //"" | "," , .
+        )                  , "\u0000"
+    ')
+
+    (( isok ))
+}
+
+
+function monitor() {
+    local blankrow=()
+    local i
+
+    # Create a blank row from which to initialize data rows
+    for (( i=0; i < ${#COLNAMES[@]}; i++ )); do
+        blankrow+=( "" )
+    done
+
+    # Print the header row
+    join "${COLNAMES[@]}"
+
+    # Print the data row every POLL_PERIOD seconds
+    while true; do
+        local datarow=( "${blankrow[@]}" )
+        local module
+
+        for module in "${MODULES[@]}"; do
+            local name value
+            local colnum
+
+            while IFS=, read -r name value; do
+                colnum=${COLNUM_BY_NAME[$name]-}
+
+                if [[ -n "$colnum" ]]; then
+                    datarow[colnum]=$value
+                fi
+            done < <("$module")
+        done
+
+        # Print the data row and sleep for a POLL_PERIOD
+        join "${datarow[@]}"
+        sleep "$POLL_PERIOD"
+    done
+}
+
+
+function join() {
+    local line=$(printf ",%s" "$@")
+
+    printf "%s\n" "${line:1}"
+}
+
+
+function monitor-base() {
+    printf "TIMESTAMP,%s\n" "$(date "+%Y%m%d %H:%M:%S %z")"
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"

@@ -1,1 +1,2 @@
+@reboot         BASH_ENV=${WORKDIR}/.bashrc LOGGER_ENABLE= ${DPM}/common/bin/cronlogger CRON_MONITOR 'monitor monitor-common.json'
 05 00 * * *     BASH_ENV=${WORKDIR}/.bashrc ${DPM}/common/bin/cronlogger CRON_ARCHIVE 'archiver archiver-common.json'

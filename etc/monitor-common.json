@@ -1,0 +1,48 @@
+{
+    "monitor" : {
+        "cpu" : {
+            "module"  : "monitor-cpu.sh",
+            "columns" : [
+                "%usr",
+                "%nice",
+                "%sys",
+                "%iowait",
+                "%irq",
+                "%soft",
+                "%steal",
+                "%guest",
+                "%gnice",
+                "%idle"
+            ]
+        },
+
+        "memory" : {
+            "module"  : "monitor-mem.sh",
+            "columns" : [
+                "Mem:total",
+                "Mem:used",
+                "Mem:free",
+                "Mem:shared",
+                "Mem:buff/cache",
+                "Mem:available",
+                "Swap:total",
+                "Swap:used",
+                "Swap:free"
+            ]
+        },
+
+        "network" : {
+            "module"  : "monitor-net.sh",
+            "columns" : [
+                "RX-OK",
+                "RX-ERR",
+                "RX-DRP",
+                "RX-OVR",
+                "TX-OK",
+                "TX-ERR",
+                "TX-DRP",
+                "TX-OVR"
+            ]
+        }
+    }
+}
