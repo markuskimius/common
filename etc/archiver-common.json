@@ -1,5 +1,5 @@
 {
-    "archive": {
+    "archiver": {
         "logs" : {
             "!pattern" : "f'{WORKDIR}/log/*_????????_??:??:??.log'",
             "keepdays" : 14

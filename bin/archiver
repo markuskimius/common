@@ -5,7 +5,7 @@ function usage() {
 Usage: archiver [OPTIONS] CONFIG
 
 OPTIONS
-  CONFIG                Configuration file for the archive.
+  CONFIG                Configuration file for the archiver.
 
 EOF
 }
@@ -53,7 +53,7 @@ function main() {
     # Archive
     for service in "${!PATTERNS[@]}"; do
         logger INFO "Archiving ${service}..."
-        archive "$service" 2>&1 | timestamp
+        archiver "$service" 2>&1 | timestamp
         printf "\n"
 
         if (( $? == 0 )); then
@@ -77,12 +77,12 @@ function load_config() {
     KEEPDAYS=()
 
     while IFS=$'\002' read -r -d $'\000' name pattern keepdays; do
-        [[ -z "$pattern" ]] && printf "%s\n" "${CONFIG}: missing /archive/${name}/pattern" 1>&2 && isok=0
-        [[ -z "$keepdays" ]] && printf "%s\n" "${CONFIG}: missing /archive/${name}/keepdays" 1>&2 && isok=0
+        [[ -z "$pattern" ]] && printf "%s\n" "Missing /archiver/${name}/pattern" 1>&2 && isok=0
+        [[ -z "$keepdays" ]] && printf "%s\n" "Missing /archiver/${name}/keepdays" 1>&2 && isok=0
 
         PATTERNS[$name]=$pattern
         KEEPDAYS[$name]=$keepdays
-    done < <(printf "%s\n" "$config" | jq -j '.archive | to_entries[] |
+    done < <(printf "%s\n" "$config" | jq -j '.archiver | to_entries[] |
         .key                 , "\u0002",
         .value.pattern  //"" , "\u0002",
         .value.keepdays //"" , "\u0000"
@@ -92,7 +92,7 @@ function load_config() {
 }
 
 
-function archive() {
+function archiver() {
     local service=$1
     local pattern=${PATTERNS[$service]-}
     local keepdays=${KEEPDAYS[$service]-}
