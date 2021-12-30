@@ -1,0 +1,136 @@
+#!/bin/bash
+
+function usage() {
+    cat <<EOF
+Usage: archiver [OPTIONS] CONFIG
+
+OPTIONS
+  CONFIG                Configuration file for the archive.
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+source "getopt.sh"    || exit 1
+source "logger.sh"    || exit 1
+source "realpath.sh"  || exit 1
+source "timestamp.sh" || exit 1
+
+
+SCRIPTNAME=$(basename "${BASH_SOURCE}")
+SCRIPTDIR=$(dirname "$(realpath-sh "${BASH_SOURCE}")")
+NOW=$(date +%s)
+
+declare -A PATTERNS=()
+declare -A KEEPDAYS=()
+
+
+function main() {
+    local OPTOPT OPTARG
+    local isok=1
+
+    # Process options
+    while getopt-sh "h" "help" "$@"; do
+        case "$OPTOPT" in
+            -h|--help)  usage "$@" && exit ;;
+            *)          isok=0
+        esac
+    done
+
+    # Load the config
+    set -o pipefail
+    load_config "${OPTARG[@]}" || ok=0
+
+    # Sanity check
+    if (( ! isok )); then
+        usage 1>&2
+        exit 1
+    fi
+
+    # Archive
+    for service in "${!PATTERNS[@]}"; do
+        logger INFO "Archiving ${service}..."
+        archive "$service" 2>&1 | timestamp
+        printf "\n"
+
+        if (( $? == 0 )); then
+            logger INFO "Archiving ${service} OK"
+        else
+            logger ERROR "Archiving ${service} FAILED"
+            isok=0
+        fi
+    done
+
+    (( isok ))
+}
+
+
+function load_config() {
+    local config=$(common cfg "$@")
+    local name pattern keepdays
+    local isok=1
+
+    PATTERNS=()
+    KEEPDAYS=()
+
+    while IFS=$'\002' read -r -d $'\000' name pattern keepdays; do
+        [[ -z "$pattern" ]] && printf "%s\n" "${CONFIG}: missing /archive/${name}/pattern" 1>&2 && isok=0
+        [[ -z "$keepdays" ]] && printf "%s\n" "${CONFIG}: missing /archive/${name}/keepdays" 1>&2 && isok=0
+
+        PATTERNS[$name]=$pattern
+        KEEPDAYS[$name]=$keepdays
+    done < <(printf "%s\n" "$config" | jq -j '.archive | to_entries[] |
+        .key                 , "\u0002",
+        .value.pattern  //"" , "\u0002",
+        .value.keepdays //"" , "\u0000"
+    ')
+
+    (( isok ))
+}
+
+
+function archive() {
+    local service=$1
+    local pattern=${PATTERNS[$service]-}
+    local keepdays=${KEEPDAYS[$service]-}
+    local filename
+
+    # Find matching files and delete them
+    for filename in $pattern; do
+        [[ -e "$filename" ]] || continue
+
+        printf "%s .. " "$filename"
+
+        if is_deletable "$filename" "$keepdays"; then
+            printf "[DELETE]\n" && rm -f "$filename"
+        else
+            printf "[KEEP]\n"
+        fi
+    done
+}
+
+
+function is_deletable() {
+    local filename=$1
+    local keepdays=$2
+    local keepsecs=$(( keepdays * 24 * 60 * 60 ))
+    local mtime=$(stat -c %Y "$filename")
+
+    (( NOW - mtime > keepsecs )) && ! is_open "$filename"
+}
+
+
+function is_open() {
+    local filename=$1
+
+    lsof "$filename" &>/dev/null
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"

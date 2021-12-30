@@ -1,0 +1,13 @@
+{
+    "archive": {
+        "logs" : {
+            "!pattern" : "f'{WORKDIR}/log/*_????????_??:??:??.log'",
+            "keepdays" : 14
+        },
+
+        "tokens": {
+            "!pattern" : "f'{WORKDIR}/token/*.token'",
+            "keepdays" : 14
+        }
+    }
+}
