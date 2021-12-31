@@ -158,7 +158,10 @@ function bashrc-command() {
     [[ -z "$WORKDIR" ]] && printf "\$WORKDIR not set\n" 1>&2 && isok=0
 
     if (( isok )); then
-        printf "[[ -z \"\${DPM-}\" ]] && eval \"\$(%q setup)\"\n" "$dpm" > "$bashrc" || isok=0
+        cat > "$bashrc" <<EOF
+[[ -z "\$__DPM__" ]] && export __DPM__=1 && eval "$(printf "\$(%q setup)" "$dpm")"
+EOF
+        (( $? )) && isok=0
     fi
 
     if (( isok )); then
