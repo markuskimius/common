@@ -159,7 +159,7 @@ function bashrc-command() {
 
     if (( isok )); then
         cat > "$bashrc" <<EOF
-[[ -z "\$__DPM__" ]] && export __DPM__=1 && eval "$(printf "\$(%q setup)" "$dpm")"
+[[ -z "\$__DPM__" ]] && export __DPM__=1 && eval "$(printf "\$(bash --norc --noprofile %q setup)" "$dpm")"
 EOF
         (( $? )) && isok=0
     fi
