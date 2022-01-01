@@ -1,0 +1,31 @@
+{
+    "commands": {
+        "cfg" : {
+            "!command" : [ "f'{DPM}/common/bin/common-cfg'" ]
+        },
+
+        "python3" : {
+            "!command" : [ "f'{DPM}/common/bin/common-python3'" ]
+        },
+
+        "test" : {
+            "!command" : [ "f'{DPM}/common/bin/common-core'", "'test'" ]
+        },
+
+        "bashrc" : {
+            "!command" : [ "f'{DPM}/common/bin/common-core'", "'bashrc'" ]
+        },
+
+        "croncat" : {
+            "!command" : [ "f'{DPM}/common/bin/common-core'", "'croncat'" ]
+        },
+
+        "cronset" : {
+            "!command" : [ "f'{DPM}/common/bin/common-core'", "'cronset'" ]
+        },
+
+        "crondiff" : {
+            "!command" : [ "f'{DPM}/common/bin/common-core'", "'crondiff'" ]
+        }
+    }
+}

@@ -1,0 +1,383 @@
+#!/usr/bin/env bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/main/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Usage: ${SCRIPTNAME} [OPTIONS] COMMAND [ARGUMENTS]
+
+COMMAND:
+  cfg [CONFIG]          Read CONFIG and print its consolidated output.  If
+                        CONFIG contains no path separator (/) it is assumed to
+                        be a file in \$DPM/*/etc.  To read a file in the
+                        current directory, specify it as ./CONFIG.  CONFIG may
+                        also be a glob.  See CONFIG below for more information.
+
+  test                  Test the environment to ensure it has all dependencies
+                        required by COMMON.
+
+  bashrc                Generate and output the name of the bashrc to source by
+                        cronjobs.
+
+  python3 [ARGUMENTS]   Call python3 with [ARGUMENTS].  If python3 is not
+                        installed, python is called instead.
+
+  croncat               Output the consolidated crontab of all active packages.
+                        See CRONTAB below for more information.
+
+  cronset               Install the crontab of all active packages.
+
+  crondiff [ARGUMENTS]  Diff the crontabs of all active packages against the
+                        installed crontab.  ARGUMENTS, if any, are passed to
+                        the DIFF command.
+
+CONFIG
+  CONFIG is a JSON file whose contents are interpreted by 'common cfg' if they
+  contain any of these special name-value pair patterns:
+
+    "#preload" : [ STATEMENTS ]
+                        STATEMENTS are executed by python3 before the rest of
+                        the CONFIG is parsed.  If any of the statements' result
+                        needs to be saved, save it as a member of 'self'.
+                        Example:
+
+                          "#preload" : [
+                            "import datetime",
+                            "self.now = datetime.datetime.now()"
+                          ]
+
+    "#include" : "CONFIG"
+    "#include" : [ CONFIGS ]
+                        Insert the contents of CONFIG or CONFIGS where these
+                        specials appear.
+
+    "!NAME" : "EXPRESSION"
+                        EXPRESSION is evaluated by python3 and is replaced by
+                        the result of the expression.  Also, !NAME is renamed
+                        to NAME.  Example:
+
+                          "!datetime" : "self.now.strftime('%Y-%m-%d_%H:%M:%S')"
+
+    "?EXPRESSION" : DATA
+                        Insert DATA if the python3 EXPRESSION evaluates to
+                        True, otherwise the node is removed.
+
+    "USER@HOST" : DATA
+                        Insert DATA only when 'common cfg' is run by USER on
+                        HOST.  Either HOST or USER may be omitted to insert
+                        DATA when the command is executed by USER on any host,
+                        or on HOST by any user, respectively.
+
+  The python3 environment under which EXPRESSIONS and STATEMENTS run define the
+  following variables:
+
+    DPM
+    WORKDIR
+
+CRONTAB
+  A package may include a crontab under "\$DPM/PKGNAME/etc/crontab.shdoc".  The
+  format of a .shdoc file is same as that of a BASH "Here Document"* without
+  the limit strings.  That is, environment variables may be embedded within it
+  as well as command output, using special characters such as the dollar sign
+  or a backticket, and special characters may be escaped with a backslash.
+  See the BASH documentation for more details on the Here Document.
+
+  * - https://tldp.org/LDP/abs/html/here-docs.html
+
+ENVIRONMENT VARIABLES:
+  DIFF                  The command used to show diff.  [Default=diff].
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+SCRIPTNAME=$(basename -- "$BASH_SOURCE")
+SCRIPTPATH=$BASH_SOURCE
+SCRIPTARGV=( "$@" )
+
+
+function main() {
+    local command=()
+    local lock=0
+    local isok=1
+
+    # Execute the command
+    case "$1" in
+        cfg)            shift && action=( cfg-command       )           ;;
+        test)           shift && action=( test-command      )           ;;
+        bashrc)         shift && action=( bashrc-command    ) && lock=1 ;;
+        python3)        shift && action=( python3-command   )           ;;
+        croncat)        shift && action=( croncat-command   )           ;;
+        cronset)        shift && action=( cronset-command   )           ;;
+        crondiff)       shift && action=( crondiff-command  )           ;;
+        help)           shift && action=( usage             )           ;;
+        *)              isok=0
+    esac
+
+    # Ensure core dependencies are met
+    ensure-deps || isok=0
+
+    # Sanity check
+    if (( ! isok )); then
+        usage 1>&2
+        exit 1
+    fi
+
+    # Lock
+    if (( lock )); then
+        lock-workdir || exit 1
+    fi
+
+    "${action[@]}" "$@"
+}
+
+
+function cfg-command() {
+    python3-command "${DPM}/common/lib/common_cfg.py" "$@"
+}
+
+
+function bashrc-command() {
+    local dpm=$(command -v dpm)
+    local bashrc="${WORKDIR}/.bashrc"
+    local isok=1
+
+    # Sanity check
+    [[ -z "$dpm"     ]] && printf "dpm not found\n" 1>&2 && isok=0
+    [[ -z "$DPM"     ]] && printf "\$DPM not set\n" 1>&2 && isok=0
+    [[ -z "$WORKDIR" ]] && printf "\$WORKDIR not set\n" 1>&2 && isok=0
+
+    if (( isok )); then
+        cat > "$bashrc" <<EOF
+[[ -z "\$__DPM__" ]] && export __DPM__=1 && eval "$(printf "\$(bash --norc --noprofile %q setup)" "$dpm")"
+EOF
+        (( $? )) && isok=0
+    fi
+
+    if (( isok )); then
+        printf "%s\n" "$bashrc"
+    fi
+
+    (( isok ))
+}
+
+
+function test-command() {
+    source "colorize.sh" || exit 1
+
+    local commands=(
+        basename cat crontab dirname env git grep hostname jq netstat ps
+        sort tac timeout tput whoami
+    )
+    local vars=( DPM HOME HOSTNAME USER WORKDIR )
+    local isok=1
+    local tmp
+
+    function checking() {
+        printf "%-44s" "Checking $1 ..."
+    }
+
+    function pass() {
+        printf "["
+        colorize green PASS 1
+        printf "]\n"
+    }
+
+    function fail() {
+        printf "["
+        colorize red FAIL 1
+        printf "]\n"
+        isok=0
+    }
+
+    # variables
+    for tmp in "${vars[@]}"; do
+        checking "environment variable \$$tmp"
+        declare -p "$tmp" &>/dev/null && pass || fail
+    done
+
+    # commands
+    for tmp in "${commands[@]}"; do
+        checking "command $tmp"
+        command -v "$tmp" &>/dev/null && pass || fail
+    done
+
+    # bash 4
+    if true; then
+        checking "bash is version 4 or later"
+        (( "$(bash -c 'printf "%s" "${BASH_VERSINFO[0]}"')" >= 4 )) && pass || fail
+    fi
+
+    # enhanced getopt
+    if true; then
+        checking "getopt is enhanced"
+
+        command -v getopt >/dev/null && getopt -T &>/dev/null
+        (( $? == 4 )) && pass || fail
+    fi
+
+    # realpath
+    if true; then
+        checking "realpath or readlink -f"
+
+        if command -v realpath >/dev/null; then
+            pass
+        elif command -v readlink >/dev/null && readlink -f . &>/dev/null; then
+            pass
+        else
+            fail
+        fi
+    fi
+
+    # python 3
+    if true; then
+        local version=$(python3-command --version 2>/dev/null)
+        local number=${version##* }
+        local major=${number%%.*}
+
+        checking "python is version 3"
+        [[ -n "$major" ]] && (( major == 3 )) && pass || fail
+    fi
+
+    (( isok ))
+}
+
+
+function python3-command() {
+    local real=$(command -v python3 || command -v python)
+
+    # Sanity check
+    if [[ -z "$real" ]]; then
+        printf "python3 not installed\n" 1>&2
+        return 1
+    fi
+
+    exec "$real" "$@"
+}
+
+
+function croncat-command() {
+    source "template.sh" || exit 1
+
+    local activefile="${DPM}/.active"
+    local active=()
+    local pkgname
+    local crontab
+    local count=0
+
+    # Header
+    printf "%s\n" "$(repeat "#" 78)"
+    printf "# Auto generated by '%s' on %s\n" "$SCRIPTNAME" "$(date)"
+    printf "\n"
+
+    # Get the list of active packages
+    if [[ -r "$activefile" ]]; then
+        active=( $(cat "$activefile") )
+    fi
+
+    # Cat their crontab contents
+    for pkgname in "${active[@]}"; do
+        crontab="${DPM}/${pkgname}/etc/crontab.shdoc"
+        [[ -r "$crontab" ]] || continue
+
+        printf "%s\n" "$(repeat "#" 40)"
+        printf "# Package '%s'\n" "$pkgname"
+        template "$crontab"
+        printf "\n"
+
+        (( count+=1 ))
+    done
+
+    if (( count == 0 )); then
+        printf "# No packages with crontab\n"
+    fi
+}
+
+
+function cronset-command() {
+    local croncat=$(croncat-command)
+
+    # Show the diff first
+    "${DIFF-diff}" -u <(crontab -l) <(printf "%s\n\n" "$croncat")
+
+    # Install the new crontab
+    printf "Applying new crontab...\n"
+    printf "%s\n\n" "$croncat" | crontab -
+}
+
+
+function crondiff-command() {
+    "${DIFF-diff}" "$@" <(crontab -l) <(croncat-command)
+}
+
+
+##############################################################################
+# HELPER FUNCTIONS
+
+function ensure-deps() {
+    local isok=1
+
+    [[ -z "$WORKDIR" ]] && printf "\$WORKDIR not set\n" 1>&2 && isok=0
+    [[ -n "$WORKDIR" ]] && mkdir -p "$WORKDIR" || isok=0
+
+    (( isok ))
+}
+
+
+function lock-workdir() {
+    local lockfile="${WORKDIR}/.lock"
+    local locked=0
+
+    #
+    # 'flock' is preferred but (1) it requires restarting the script and (2) it
+    # may not be available on some systems.  This script must be written such
+    # that (1) is not an issue.
+    #
+    # As for (2), we fall back on 'shlock' if 'flock' is not available.
+    # 'shlock' is less preferred because it may run into a race condition on
+    # some platforms.  Also, as with 'flock', it may not be available on some
+    # systems.
+    #
+
+    if command -v flock >/dev/null; then
+        if [[ "$FLOCKER" == "$lockfile" ]]; then
+            locked=1
+        else
+            export FLOCKER=$lockfile
+            exec flock "$lockfile" "$SCRIPTPATH" "${SCRIPTARGV[@]}"
+        fi
+    elif command -v shlock >/dev/null; then
+        while true; do
+            shlock -p $$ -f "$lockfile" && locked=1 && break
+            sleep 1
+        done
+    else
+        printf "No locking command available\n" 1>&2
+    fi
+
+    (( locked ))
+}
+
+
+function repeat() {
+    local char=$1
+    local count=$2
+
+    printf "${char}%.0s" $(seq "$count")
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"

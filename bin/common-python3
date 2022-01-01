@@ -11,21 +11,10 @@
 
 function usage() {
     cat <<EOF
-Usage: ${SCRIPTNAME} [OPTIONS] COMMAND [ARGUMENTS]
+Usage: ${SCRIPTNAME} [ARGUMENTS]
 
-OPTIONS:
-  -q                    Suppress verbosity.
-
-COMMAND may be one of:
-$(
-    for name in $(common-cfg "$CONFIG" | jq -r ".commands | keys[]"); do
-        echo "  $name"
-    done
-)
-
-FILES:
-  ${CONFIG}
-                        Command configuration file.
+  Execute python3 or python, in that order of preference, with ARGUMENTS if
+  specified.
 
 EOF
 }
@@ -34,43 +23,29 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-SCRIPTNAME=$(basename "${BASH_SOURCE}")
-CONFIG="common.json"
+SCRIPTNAME=$(basename -- "$BASH_SOURCE")
 
 
 function main() {
     local OPTARG OPTIND OPTERR opt
-    local name command=()
     local isok=1
 
     # Process options
-    while getopts "qh" opt; do
+    while getopts "h" opt; do
         case "$opt" in
-            q)  LOGGER_ENABLE= ;;
             h)  usage && exit  ;;
             *)  isok=0
         esac
     done
 
-    # Optionless arguments
-    name=${1-} && shift
-
     # Sanity check
-    [[ -z "$name" ]] && echo "Must specify COMMAND" 1>&2 && isok=0
-
     if (( ! isok )); then
         usage 1>&2
         exit 1
     fi
 
-    # Grab the command
-    IFS=$'\002' read -ra command <<<$(
-        common-cfg "$CONFIG" \
-        | jq -j "$(printf '.commands."%s".command[]//"" | . , "\u0002"' "$name")" 2>/dev/null
-    )
-
     # Execute the command
-    exec "${command[@]}" "$@"
+    exec $(command -v python3 || printf "python") "$@"
 }
 
 

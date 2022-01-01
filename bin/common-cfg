@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/main/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Usage: ${SCRIPTNAME} CONFIG
+
+  Read CONFIG and print its consolidated output.  If CONFIG contains no path
+  separator (/) it is assumed to be a file in \$DPM/*/etc.  To read a file in the
+  current directory, specify it as ./CONFIG.  CONFIG may also be a glob.  See
+  CONFIG below for more information.
+
+CONFIG
+  CONFIG is a JSON file whose contents are interpreted by 'common cfg' if they
+  contain any of these special name-value pair patterns:
+
+    "#preload" : [ STATEMENTS ]
+                        STATEMENTS are executed by python3 before the rest of
+                        the CONFIG is parsed.  If any of the statements' result
+                        needs to be saved, save it as a member of 'self'.
+                        Example:
+
+                          "#preload" : [
+                            "import datetime",
+                            "self.now = datetime.datetime.now()"
+                          ]
+
+    "#include" : "CONFIG"
+    "#include" : [ CONFIGS ]
+                        Insert the contents of CONFIG or CONFIGS where these
+                        specials appear.
+
+    "!NAME" : "EXPRESSION"
+                        EXPRESSION is evaluated by python3 and is replaced by
+                        the result of the expression.  Also, !NAME is renamed
+                        to NAME.  Example:
+
+                          "!datetime" : "self.now.strftime('%Y-%m-%d_%H:%M:%S')"
+
+    "?EXPRESSION" : DATA
+                        Insert DATA if the python3 EXPRESSION evaluates to
+                        True, otherwise the node is removed.
+
+    "USER@HOST" : DATA
+                        Insert DATA only when 'common cfg' is run by USER on
+                        HOST.  Either HOST or USER may be omitted to insert
+                        DATA when the command is executed by USER on any host,
+                        or on HOST by any user, respectively.
+
+  The python3 environment under which EXPRESSIONS and STATEMENTS run define the
+  following variables:
+
+    DPM
+    WORKDIR
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+SCRIPTNAME=$(basename -- "$BASH_SOURCE")
+
+
+function main() {
+    local OPTARG OPTIND OPTERR opt
+    local isok=1
+
+    # Process options
+    while getopts "h" opt; do
+        case "$opt" in
+            h)  usage && exit  ;;
+            *)  isok=0
+        esac
+    done
+
+    # Sanity check
+    if (( ! isok )); then
+        usage 1>&2
+        exit 1
+    fi
+
+    # Execute the command
+    exec $(command -v python3 || printf "python") "${DPM}/common/lib/common_cfg.py" "$@"
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"
