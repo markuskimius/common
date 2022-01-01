@@ -27,23 +27,6 @@ SCRIPTNAME=$(basename -- "$BASH_SOURCE")
 
 
 function main() {
-    local OPTARG OPTIND OPTERR opt
-    local isok=1
-
-    # Process options
-    while getopts "h" opt; do
-        case "$opt" in
-            h)  usage && exit  ;;
-            *)  isok=0
-        esac
-    done
-
-    # Sanity check
-    if (( ! isok )); then
-        usage 1>&2
-        exit 1
-    fi
-
     # Execute the command
     exec $(command -v python3 || printf "python") "$@"
 }
