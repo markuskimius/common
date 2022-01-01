@@ -55,19 +55,20 @@ function main() {
     # Optionless arguments
     name=${1-} && shift
 
-    # Sanity check
-    [[ -z "$name" ]] && echo "Must specify COMMAND" 1>&2 && isok=0
-
-    if (( ! isok )); then
-        usage 1>&2
-        exit 1
-    fi
-
     # Grab the command
     IFS=$'\002' read -ra command <<<$(
         common-cfg "$CONFIG" \
         | jq -j "$(printf '.commands."%s".command[]//"" | . , "\u0002"' "$name")" 2>/dev/null
     )
+
+    # Sanity check
+    [[ -z "$name" ]] && echo "Must specify COMMAND" 1>&2 && isok=0
+    (( ! ${#command[@]} )) && echo "${name}: Invalid COMMAND" 1>&2 && isok=0
+
+    if (( ! isok )); then
+        usage 1>&2
+        exit 1
+    fi
 
     # Execute the command
     exec "${command[@]}" "$@"
