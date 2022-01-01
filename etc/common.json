@@ -17,15 +17,15 @@
         },
 
         "croncat" : {
-            "!command" : [ "f'{DPM}/common/bin/common-core'", "'croncat'" ]
+            "!command" : [ "f'{DPM}/common/bin/common-crontab'", "'cat'" ]
         },
 
         "cronset" : {
-            "!command" : [ "f'{DPM}/common/bin/common-core'", "'cronset'" ]
+            "!command" : [ "f'{DPM}/common/bin/common-crontab'", "'install'" ]
         },
 
         "crondiff" : {
-            "!command" : [ "f'{DPM}/common/bin/common-core'", "'crondiff'" ]
+            "!command" : [ "f'{DPM}/common/bin/common-crontab'", "'diff'" ]
         }
     }
 }
