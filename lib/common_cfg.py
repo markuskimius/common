@@ -288,7 +288,12 @@ class PythonFilter:
             for k,v in json_data.items():
                 if isinstance(k,str) and k.startswith('!'):
                     k = k[1:]
-                    v = self.evaluator.eval(v)
+
+                    if isinstance(v,list):
+                        for i in range(len(v)):
+                            v[i] = self.evaluator.eval(v[i])
+                    else:
+                        v = self.evaluator.eval(v)
 
                 filtered[k] = self.__call__(v)
 
