@@ -14,20 +14,11 @@ function usage() {
 Usage: ${SCRIPTNAME} [OPTIONS] COMMAND [ARGUMENTS]
 
 COMMAND:
-  cfg [CONFIG]          Read CONFIG and print its consolidated output.  If
-                        CONFIG contains no path separator (/) it is assumed to
-                        be a file in \$DPM/*/etc.  To read a file in the
-                        current directory, specify it as ./CONFIG.  CONFIG may
-                        also be a glob.  See CONFIG below for more information.
-
   test                  Test the environment to ensure it has all dependencies
                         required by COMMON.
 
   bashrc                Generate and output the name of the bashrc to source by
                         cronjobs.
-
-  python3 [ARGUMENTS]   Call python3 with [ARGUMENTS].  If python3 is not
-                        installed, python is called instead.
 
   croncat               Output the consolidated crontab of all active packages.
                         See CRONTAB below for more information.
@@ -37,49 +28,6 @@ COMMAND:
   crondiff [ARGUMENTS]  Diff the crontabs of all active packages against the
                         installed crontab.  ARGUMENTS, if any, are passed to
                         the DIFF command.
-
-CONFIG
-  CONFIG is a JSON file whose contents are interpreted by 'common cfg' if they
-  contain any of these special name-value pair patterns:
-
-    "#preload" : [ STATEMENTS ]
-                        STATEMENTS are executed by python3 before the rest of
-                        the CONFIG is parsed.  If any of the statements' result
-                        needs to be saved, save it as a member of 'self'.
-                        Example:
-
-                          "#preload" : [
-                            "import datetime",
-                            "self.now = datetime.datetime.now()"
-                          ]
-
-    "#include" : "CONFIG"
-    "#include" : [ CONFIGS ]
-                        Insert the contents of CONFIG or CONFIGS where these
-                        specials appear.
-
-    "!NAME" : "EXPRESSION"
-                        EXPRESSION is evaluated by python3 and is replaced by
-                        the result of the expression.  Also, !NAME is renamed
-                        to NAME.  Example:
-
-                          "!datetime" : "self.now.strftime('%Y-%m-%d_%H:%M:%S')"
-
-    "?EXPRESSION" : DATA
-                        Insert DATA if the python3 EXPRESSION evaluates to
-                        True, otherwise the node is removed.
-
-    "USER@HOST" : DATA
-                        Insert DATA only when 'common cfg' is run by USER on
-                        HOST.  Either HOST or USER may be omitted to insert
-                        DATA when the command is executed by USER on any host,
-                        or on HOST by any user, respectively.
-
-  The python3 environment under which EXPRESSIONS and STATEMENTS run define the
-  following variables:
-
-    DPM
-    WORKDIR
 
 CRONTAB
   A package may include a crontab under "\$DPM/PKGNAME/etc/crontab.shdoc".  The
@@ -113,10 +61,8 @@ function main() {
 
     # Execute the command
     case "$1" in
-        cfg)            shift && action=( cfg-command       )           ;;
         test)           shift && action=( test-command      )           ;;
         bashrc)         shift && action=( bashrc-command    ) && lock=1 ;;
-        python3)        shift && action=( python3-command   )           ;;
         croncat)        shift && action=( croncat-command   )           ;;
         cronset)        shift && action=( cronset-command   )           ;;
         crondiff)       shift && action=( crondiff-command  )           ;;
@@ -139,11 +85,6 @@ function main() {
     fi
 
     "${action[@]}" "$@"
-}
-
-
-function cfg-command() {
-    python3-command "${DPM}/common/lib/common_cfg.py" "$@"
 }
 
 
@@ -241,7 +182,7 @@ function test-command() {
 
     # python 3
     if true; then
-        local version=$(python3-command --version 2>/dev/null)
+        local version=$(common-python3 --version 2>/dev/null)
         local number=${version##* }
         local major=${number%%.*}
 
@@ -250,19 +191,6 @@ function test-command() {
     fi
 
     (( isok ))
-}
-
-
-function python3-command() {
-    local real=$(command -v python3 || command -v python)
-
-    # Sanity check
-    if [[ -z "$real" ]]; then
-        printf "python3 not installed\n" 1>&2
-        return 1
-    fi
-
-    exec "$real" "$@"
 }
 
 
