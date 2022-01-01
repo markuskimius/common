@@ -19,7 +19,7 @@ Usage: ${SCRIPTNAME} CONFIG
   CONFIG below for more information.
 
 CONFIG
-  CONFIG is a JSON file whose contents are interpreted by 'common cfg' if they
+  CONFIG is a JSON file whose contents are interpreted by 'common-cfg' if they
   contain any of these special name-value pair patterns:
 
     "#preload" : [ STATEMENTS ]
@@ -50,7 +50,7 @@ CONFIG
                         True, otherwise the node is removed.
 
     "USER@HOST" : DATA
-                        Insert DATA only when 'common cfg' is run by USER on
+                        Insert DATA only when 'common-cfg' is run by USER on
                         HOST.  Either HOST or USER may be omitted to insert
                         DATA when the command is executed by USER on any host,
                         or on HOST by any user, respectively.
