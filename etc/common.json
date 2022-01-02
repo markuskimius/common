@@ -1,31 +1,54 @@
 {
     "commands": {
         "cfg" : {
-            "!command" : [ "f'{DPM}/common/bin/common-cfg'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-cfg'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-cfg'", "'-h'" ],
+            "description" : [ "Find, merge and process config file(s)." ]
         },
 
         "python3" : {
-            "!command" : [ "f'{DPM}/common/bin/common-python3'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-python3'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-python3'", "'-h'" ],
+            "description" : [ "Execute a python3 binary, named python3 or python." ]
         },
 
         "test" : {
-            "!command" : [ "f'{DPM}/common/bin/common-core'", "'test'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-core'", "'test'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-core'", "'-h'" ],
+            "description" : [ "Test the environment to ensure it has all dependencies",
+                              "required by COMMON."
+                            ]
         },
 
         "bashrc" : {
-            "!command" : [ "f'{DPM}/common/bin/common-core'", "'bashrc'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-core'", "'bashrc'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-core'", "'-h'" ],
+            "description" : [ "Generate and output the name of the bashrc to source by",
+                              "cronjobs."
+                            ]
         },
 
         "croncat" : {
-            "!command" : [ "f'{DPM}/common/bin/common-crontab'", "'cat'" ]
-        },
-
-        "cronset" : {
-            "!command" : [ "f'{DPM}/common/bin/common-crontab'", "'install'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-crontab'", "'cat'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-crontab'", "'-h'" ],
+            "description" : [ "Output the consolidated crontab of all active packages.",
+                              "See CRONTAB below for more information."
+                            ]
         },
 
         "crondiff" : {
-            "!command" : [ "f'{DPM}/common/bin/common-crontab'", "'diff'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-crontab'", "'diff'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-crontab'", "'-h'" ],
+            "description" : [ "Diff the crontabs of all active packages against the",
+                              "installed crontab.  ARGUMENTS, if any, are passed to",
+                              "the DIFF command."
+                            ]
+        },
+
+        "cronset" : {
+            "!command"    : [ "f'{DPM}/common/bin/common-crontab'", "'install'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-crontab'", "'-h'" ],
+            "description" : [ "Install the crontab of all active packages." ]
         }
     }
 }

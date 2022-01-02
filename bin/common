@@ -17,10 +17,26 @@ OPTIONS:
   -q                    Suppress verbosity.
 
 COMMAND may be one of:
+  help COMMAND          Show help for COMMAND.
+
 $(
-    for name in $(common-cfg "$CONFIG" | jq -r ".commands | keys[]"); do
-        echo "  $name"
-    done
+    format="  %-21s %s"
+    lines=()
+
+    while IFS=$'\002' read -d $'\000' -r name desc; do
+        IFS=$'\n' read -d '' -ra lines <<<"$desc"
+
+        for line in "${lines[@]}"; do
+            printf "${format}\n" "$name" "$line"
+            name=""
+        done
+
+        printf "\n"
+    done < <(common-cfg "$CONFIG" | jq -j '
+        .commands | to_entries[] | .key, "\u0002", (
+            .value.description//[] | .[] | ., "\u000a"
+        ), "\u0000"
+    ')
 )
 
 FILES:
@@ -40,7 +56,7 @@ CONFIG="common.json"
 
 function main() {
     local OPTARG OPTIND OPTERR opt
-    local name command=()
+    local name selector="command" command=()
     local isok=1
 
     # Process options
@@ -55,10 +71,17 @@ function main() {
     # Optionless arguments
     name=${1-} && shift
 
+    if [[ "$name" == "help" ]]; then
+        selector="help"
+        name=${1-} && shift
+
+        [[ -z "$name" ]] && usage && exit
+    fi
+
     # Grab the command
     IFS=$'\002' read -ra command <<<$(
         common-cfg "$CONFIG" \
-        | jq -j "$(printf '.commands."%s".command[]//"" | . , "\u0002"' "$name")" 2>/dev/null
+        | jq -j "$(printf '.commands."%s".%s[]//"" | . , "\u0002"' "$name" "$selector")" 2>/dev/null
     )
 
     # Sanity check
