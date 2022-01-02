@@ -14,6 +14,7 @@ function usage() {
 Usage: ${SCRIPTNAME} [OPTIONS] COMMAND [ARGUMENTS]
 
 OPTIONS:
+  -c CONFIG             Read alternate CONFIG file.
   -q                    Suppress verbosity.
 
 COMMAND may be one of:
@@ -35,8 +36,8 @@ $(
     done < <(common-cfg "$CONFIG" | jq -j '
         .commands | to_entries[] | .key, "\u0002", (
             .value.description//[] | .[] | ., "\u000a"
-        ), "\u0000"
-    ')
+        ), "\u0000"' 2>/dev/null
+    )
 )
 
 FILES:
@@ -50,8 +51,8 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-SCRIPTNAME=$(basename "${BASH_SOURCE}")
-CONFIG="common.json"
+SCRIPTNAME=${BASH_SOURCE##*/}
+CONFIG="${SCRIPTNAME}.json"
 
 
 function main() {
@@ -60,13 +61,15 @@ function main() {
     local isok=1
 
     # Process options
-    while getopts "qh" opt; do
+    while getopts "c:qh" opt; do
         case "$opt" in
+            c)  CONFIG=$OPTARG ;;
             q)  LOGGER_ENABLE= ;;
             h)  usage && exit  ;;
             *)  isok=0
         esac
     done
+    shift $((OPTIND-1))
 
     # Optionless arguments
     name=${1-} && shift
@@ -86,7 +89,7 @@ function main() {
 
     # Sanity check
     [[ -z "$name" ]] && echo "Must specify COMMAND" 1>&2 && isok=0
-    (( ! ${#command[@]} )) && echo "${name}: Invalid COMMAND" 1>&2 && isok=0
+    [[ -n "$name" ]] && (( ! ${#command[@]} )) && echo "${name}: Invalid COMMAND" 1>&2 && isok=0
 
     if (( ! isok )); then
         usage 1>&2
