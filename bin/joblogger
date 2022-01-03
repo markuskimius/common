@@ -162,7 +162,11 @@ function run() {
     fi
 
     # Run the command
-    bash -c "$(printf "%q " "$@")" & pid=$!
+    bash <(cat <<EOF
+        export PYTHONUNBUFFERED=1
+        $(printf "%q " "$@")
+EOF
+    ) & pid=$!
     printf "JOB_PID=%s\n" "$pid" >> "$tokenfile"
 
     # Wait
