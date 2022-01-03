@@ -80,62 +80,86 @@ function main() {
         exit 1
     fi
 
-    # Install signal handlers
-    trap '__on_signal TERM' TERM
-    trap '__on_signal HUP' HUP
-    trap '__on_signal INT' INT
-    trap '__on_exit' EXIT
-
     # Do my thing
     joblogger "$@" || exitcode=$?
 
-    # Restore the signal handlers
-    trap - TERM
-    trap - HUP
-    trap - INT
-    trap - EXIT
-
     return "$exitcode"
-}
-
-
-function __on_signal() {
-    local signal=$1
-    local signum=$(kill -l $signal)
-
-    # Record the cause of termination
-    logger WARNING "Caught SIG${signal}"
-
-    # Restore the signal handlers
-    trap - TERM
-    trap - HUP
-    trap - INT
-
-    # SIGINT should send signal to itself to terminate.  See
-    # http://mywiki.wooledge.org/SignalTrap#Special_Note_On_SIGINT_and_SIGQUIT
-    if [[ "$signal" == "INT" ]]; then
-        kill -s $signal $$
-    fi
-
-    # Terminate
-    exit $((128 + signum))
-}
-
-
-function __on_exit() {
-    # Kill all child processes
-    kill 0
 }
 
 
 function joblogger() {
     local jobname=$1 && shift
     local logfile=$(logname "$jobname")
+    local tokenfile=$(tokenname "$jobname")
+    local tokendir=${tokenfile%/*}
+    local logdir=${logfile%/*}
+    local exitcode=0
+    local pid=""
 
-    printf "%s logfile is %s\n" "$jobname" "$logfile"
+    # Setup
+    mkdir -p "$logdir"                   \
+    && mkdir -p "$tokendir"              \
+    || {
+        printf "%s: Unable to setup for %s" "$SCRIPTNAME" "$jobname" 1>&2
+        return 1
+    }
 
-    mkdir -p "$(dirname "$logfile")" \
-    && run "$jobname" "$@" >& "$logfile"
+    # Create the token
+    {
+        local sigterm=$(kill -l TERM)
+        local sighup=$(kill -l HUP)
+
+        # Install signal handlers
+        trap '__on_signal TERM' TERM
+        trap '__on_signal HUP' HUP
+        trap '__on_signal INT' INT
+        trap '__on_exit' EXIT
+
+        # Start the job
+        bash <(cat <<EOF
+            export PYTHONUNBUFFERED=1
+
+            # Trap signal handlers
+            trap 'printf "\nCaught SIGTERM\n" 1>&2 ; trap - TERM HUP INT ; exit \$(( 128 + $sigterm ))' TERM
+            trap 'printf "\nCaught SIGHUP\n"  1>&2 ; trap - TERM HUP INT ; exit \$(( 128 + $sighup  ))' HUP
+            trap 'printf "\nCaught SIGINT\n"  1>&2 ; trap - TERM HUP INT ; kill -s INT \$\$' INT
+            trap 'kill 0' EXIT
+
+            # Do my thing.  Background the job so we can report catching signals.
+            (
+                $(printf "%s " "$@")
+            ) & wait \$!
+
+            # Restore the signal handlers
+            trap - TERM
+            trap - HUP
+            trap - INT
+EOF
+        ) &> "$logfile" & pid=$!
+
+        # Record the job
+        printf "JOB_NAME=%s\n" "$jobname"
+        printf "JOB_LOG=%s\n" "$logfile"
+        printf "JOB_PID=%s\n" "$pid"
+        printf "JOB_STARTED=%s\n" "$STARTED"
+        printf "JOB_TIMEOUT=%s\n" "$TIMEOUT"
+
+        # Wait
+        printf "Started %s with pid %s tokenfile %s logfile %s\n" "$jobname" "$pid" "$tokenfile" "$logfile" 1>&2
+        wait "$pid" || exitcode=$?
+
+        # Record the result
+        printf "JOB_STOPPED=%s\n" "$(date +%s)"
+        printf "JOB_EXITCODE=%s\n" "$exitcode"
+
+        # Restore the signal handlers
+        trap - TERM
+        trap - HUP
+        trap - INT
+        trap - EXIT
+    } > "$tokenfile"
+
+    return "$exitcode"
 }
 
 
@@ -147,63 +171,40 @@ function logname() {
 }
 
 
-function run() {
-    local jobname=$1 && shift
-    local tokenfile=$(tokenname)
-    local exitcode=0
-    local pid
-
-    logger INFO "${jobname} started"
-
-    # Create the token
-    if ! mktoken "$jobname"; then
-        logger ERROR "Unable to create token, terminating"
-        exit 1
-    fi
-
-    # Run the command
-    bash <(cat <<EOF
-        export PYTHONUNBUFFERED=1
-        $(printf "%q " "$@")
-EOF
-    ) & pid=$!
-    printf "JOB_PID=%s\n" "$pid" >> "$tokenfile"
-
-    # Wait
-    wait $pid
-    exitcode=$?
-    (
-        printf "JOB_EXITCODE=%s\n" "$exitcode"
-        printf "JOB_EXITED=%s\n" "$(date +%s)"
-    ) >> "$tokenfile"
-
-    # Report status
-    if (( exitcode == 0 )); then
-        logger INFO "${jobname} terminated successfully"
-    else
-        logger INFO "${jobname} terminated with exit code ${exitcode}"
-    fi
-
-    return $exitcode
-}
-
-
-function mktoken() {
-    local jobname=$1
-    local tokenfile=$(tokenname)
-
-    mkdir -p "$(dirname "$tokenfile")" \
-    && rm -f "$tokenfile"              \
-    && (
-        printf "JOB_NAME=%s\n" "$jobname"
-        printf "JOB_STARTED=%s\n" "$STARTED"
-        printf "JOB_TIMEOUT=%s\n" "$TIMEOUT"
-    ) > "$tokenfile"
-}
-
-
 function tokenname() {
+    local jobname=$1
+
     printf "%s\n" "${TOKENDIR}/${jobname}.token"
+}
+
+
+function __on_signal() {
+    local signal=$1
+    local signum=$(kill -l $signal)
+
+    # Record the cause of termination
+    printf "JOB_STOPPED=%s\n" "$(date +%s)"
+    printf "JOB_EXITCODE=%s\n" "SIG${signal}"
+
+    # Restore the signal handlers
+    trap - TERM
+    trap - HUP
+    trap - INT
+
+    # SIGINT should send signal to itself to terminate.  See
+    # http://mywiki.wooledge.org/SignalTrap#Special_Note_On_SIGINT_and_SIGQUIT
+    if [[ "$signal" == "INT" ]]; then
+        kill -s "$signal" $$
+    fi
+
+    # Terminate
+    exit $((128 + signum))
+}
+
+
+function __on_exit() {
+    # Kill all child processes
+    kill 0
 }
 
 
