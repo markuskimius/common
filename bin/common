@@ -35,7 +35,7 @@ $(
         printf "\n"
     done < <(common-cfg "$CONFIG" | jq -j '
         .commands | to_entries[] | .key, "\u0002", (
-            .value.description//["(no description)"] | .[] | ., "\u000a"
+            .value.description//["(no description)"] | .[] | ., "\n"
         ), "\u0000"' 2>/dev/null
     )
 )
