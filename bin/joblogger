@@ -13,12 +13,11 @@ function usage() {
     cat <<EOF
 Execute a command and write its output to a log file.
 
-Usage: ${SCRIPTNAME} [OPTIONS] JOBNAME COMMAND
+Usage: ${SCRIPTNAME} [OPTIONS] JOBNAME COMMAND [ARGUMENTS]
 
 Options:
   JOBNAME               The name of the job.
-  COMMAND               Command to execute.  May be a quoted string containing
-                        arguments.
+  COMMAND [ARGUMENTS]   Command to execute.
 
   -t,--timeout=TIMEOUT  Maximum runtime of the job. [Default=unlimited]
 
@@ -68,8 +67,8 @@ function main() {
         esac
     done
 
-    if (( ${#OPTARG[@]} != 2 )); then
-        printf "Expected 2 arguments, got %s\n" "${#OPTARG[@]}" 1>&2
+    if (( ${#OPTARG[@]} < 2 )); then
+        printf "Expected 2 or more arguments, got %s\n" "${#OPTARG[@]}" 1>&2
         errcount=$((errcount+1))
     fi
 
@@ -128,14 +127,13 @@ function __on_exit() {
 
 
 function joblogger() {
-    local jobname=$1
-    local command=$2
+    local jobname=$1 && shift
     local logfile=$(logname "$jobname")
 
     printf "%s logfile is %s\n" "$jobname" "$logfile"
 
     mkdir -p "$(dirname "$logfile")" \
-    && run "$jobname" "$command" >& "$logfile"
+    && run "$jobname" "$@" >& "$logfile"
 }
 
 
@@ -148,8 +146,7 @@ function logname() {
 
 
 function run() {
-    local jobname=$1
-    local command=$2
+    local jobname=$1 && shift
     local tokenfile=$(tokenname)
     local exitcode=0
     local pid
@@ -163,7 +160,7 @@ function run() {
     fi
 
     # Run the command
-    bash <<<"$command" & pid=$!
+    bash -c "$(printf "%q " "$@")" & pid=$!
     printf "JOB_PID=%s\n" "$pid" >> "$tokenfile"
 
     # Wait
