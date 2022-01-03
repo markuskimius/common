@@ -11,15 +11,16 @@
 
 function usage() {
     cat <<EOF
-Execute a command and write its output to a log file.
-
 Usage: ${SCRIPTNAME} [OPTIONS] JOBNAME COMMAND [ARGUMENTS]
 
-Options:
+Execute a command and write its output to a log file.
+
   JOBNAME               The name of the job.
   COMMAND [ARGUMENTS]   Command to execute.
 
-  -t,--timeout=TIMEOUT  Maximum runtime of the job. [Default=unlimited]
+Options:
+  -q                    Quiet mode.
+  -t TIMEOUT            Maximum runtime of the job. [Default=unlimited]
 
 Environment Variables:
   WORKDIR               The default directory under with logs and tokens are
@@ -44,7 +45,6 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-source "getopt.sh" || exit 1
 source "logger.sh" || exit 1
 
 SCRIPTNAME=$(basename -- "$BASH_SOURCE")
@@ -55,25 +55,27 @@ TIMEOUT=""
 
 
 function main() {
-    local OPTOPT OPTARG
+    local OPTARG OPTIND OPTERR opt
     local exitcode=0
 
     # Process options
-    while getopt-sh "t:h" "timeout:,help" "$@"; do
-        case "$OPTOPT" in
-            -t|--timeout)  TIMEOUT=$(date -d "$OPTARG" +%s) ;;
-            -h|--help)     usage && exit 0  ;;
-            *)             errcount=$((errcount+1)) ;;
+    while getopts "t:qh" opt; do
+        case "$opt" in
+            t)  TIMEOUT=$(date -d "$OPTARG" +%s) ;;
+            q)  LOGGER_ENABLE=""                 ;;
+            h)  usage && exit 0                  ;;
+            *)  exitcode=1                       ;;
         esac
     done
+    shift $((OPTIND-1))
 
-    if (( ${#OPTARG[@]} < 2 )); then
+    if (( $# < 2 )); then
         printf "Expected 2 or more arguments, got %s\n" "${#OPTARG[@]}" 1>&2
-        errcount=$((errcount+1))
+        exitcode=1
     fi
 
     # Sanity check
-    if (( errcount )); then
+    if (( exitcode )); then
         printf "Type '%s -h' for help\n" "$SCRIPTNAME" 1>&2
         exit 1
     fi
@@ -85,7 +87,7 @@ function main() {
     trap '__on_exit' EXIT
 
     # Do my thing
-    joblogger "${OPTARG[@]}" || exitcode=$?
+    joblogger "$@" || exitcode=$?
 
     # Restore the signal handlers
     trap - TERM
