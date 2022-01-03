@@ -16,7 +16,7 @@ Execute a command and write its output to a log file.
 Usage: ${SCRIPTNAME} [OPTIONS] JOBNAME COMMAND
 
 Options:
-  JOBNAME               The name of the cronjob.
+  JOBNAME               The name of the job.
   COMMAND               Command to execute.  May be a quoted string containing
                         arguments.
 
@@ -36,7 +36,7 @@ Files:
                         The default name of the token file.
 
 Example
-  00 00 * * * BASH_ENV=${WORKDIR}/.bashrc ${DPM}/common/bin/cronlogger -t "10 minutes" CRON_FILELIST 'find "\$HOME" -type f'
+  00 00 * * * BASH_ENV=${WORKDIR}/.bashrc ${DPM}/common/bin/joblogger -t "10 minutes" CRON_FILELIST 'find "\$HOME" -type f'
 
 EOF
 }
@@ -86,7 +86,7 @@ function main() {
     trap '__on_exit' EXIT
 
     # Do my thing
-    cronlogger "${OPTARG[@]}" || exitcode=$?
+    joblogger "${OPTARG[@]}" || exitcode=$?
 
     # Restore the signal handlers
     trap - TERM
@@ -127,12 +127,12 @@ function __on_exit() {
 }
 
 
-function cronlogger() {
+function joblogger() {
     local jobname=$1
     local command=$2
     local logfile=$(logname "$jobname")
 
-    printf "%s cronjob logfile is %s\n" "$jobname" "$logfile"
+    printf "%s logfile is %s\n" "$jobname" "$logfile"
 
     mkdir -p "$(dirname "$logfile")" \
     && run "$jobname" "$command" >& "$logfile"
