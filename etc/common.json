@@ -52,39 +52,57 @@
         },
 
         "start" : {
-            "!command" : [ "f'{DPM}/common/bin/common-job'", "'start'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-job'", "'start'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-job'", "'-h'" ],
+            "description" : [ "Start JOBNAME." ]
         },
 
         "stop" : {
-            "!command" : [ "f'{DPM}/common/bin/common-job'", "'stop'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-job'", "'stop'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-job'", "'-h'" ],
+            "description" : [ "Stop JOBNAME." ]
         },
 
         "restart" : {
-            "!command" : [ "f'{DPM}/common/bin/common-job'", "'restart'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-job'", "'restart'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-job'", "'-h'" ],
+            "description" : [ "Restart JOBNAME." ]
         },
 
         "status" : {
-            "!command" : [ "f'{DPM}/common/bin/common-job'", "'status'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-job'", "'status'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-job'", "'-h'" ],
+            "description" : [ "Show the status of one or more jobs." ]
         },
 
         "log" : {
-            "!command" : [ "f'{DPM}/common/bin/common-log'", "'name'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-log'", "'name'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-log'", "'-h'" ],
+            "description" : [ "Path of the last logfile for JOBNAME." ]
         },
 
         "logcat" : {
-            "!command" : [ "f'{DPM}/common/bin/common-log'", "'cat'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-log'", "'cat'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-log'", "'-h'" ],
+            "description" : [ "Cat the last logfile for JOBNAME." ]
         },
 
         "logtail" : {
-            "!command" : [ "f'{DPM}/common/bin/common-log'", "'tail'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-log'", "'tail'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-log'", "'-h'" ],
+            "description" : [ "Tail the last logfile for JOBNAME." ]
         },
 
         "token" : {
-            "!command" : [ "f'{DPM}/common/bin/common-token'", "'name'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-token'", "'name'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-token'", "'-h'" ],
+            "description" : [ "Path of the last tokenfile for JOBNAME." ]
         },
 
         "tokencat" : {
-            "!command" : [ "f'{DPM}/common/bin/common-token'", "'cat'" ]
+            "!command"    : [ "f'{DPM}/common/bin/common-token'", "'cat'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-token'", "'-h'" ],
+            "description" : [ "Cat the last tokenfile for JOBNAME." ]
         }
     }
 }
