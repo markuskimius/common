@@ -168,7 +168,7 @@ function logname() {
     local jobname=$1
     local datetime=$(date -d "@${STARTED}" "+%Y%m%d_%H:%M:%S")
 
-    printf "%s/%s-%s.log" "$LOGDIR" "$jobname" "$datetime"
+    printf "%s/%s_%s.log" "$LOGDIR" "$jobname" "$datetime"
 }
 
 
