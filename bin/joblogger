@@ -133,6 +133,7 @@ function joblogger() {
             trap - TERM
             trap - HUP
             trap - INT
+            trap - EXIT
 EOF
         ) &> "$logfile" & pid=$!
 
