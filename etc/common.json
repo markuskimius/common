@@ -49,6 +49,22 @@
             "!command"    : [ "f'{DPM}/common/bin/common-crontab'", "'install'" ],
             "!help"       : [ "f'{DPM}/common/bin/common-crontab'", "'-h'" ],
             "description" : [ "Install the crontab of all active packages." ]
+        },
+
+        "start" : {
+            "!command" : [ "f'{DPM}/common/bin/common-job'", "'start'" ]
+        },
+
+        "stop" : {
+            "!command" : [ "f'{DPM}/common/bin/common-job'", "'stop'" ]
+        },
+
+        "restart" : {
+            "!command" : [ "f'{DPM}/common/bin/common-job'", "'restart'" ]
+        },
+
+        "status" : {
+            "!command" : [ "f'{DPM}/common/bin/common-job'", "'status'" ]
         }
     }
 }

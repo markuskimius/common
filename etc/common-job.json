@@ -1,0 +1,14 @@
+{
+    "jobs": {
+        "MONITOR" : {
+            "cmdline" : [ "monitor", "monitor-common.json" ],
+            "start"   : "@restart",
+            "quiet"   : true
+        },
+
+        "ARCHIVE" : {
+            "cmdline" : [ "archiver", "archiver-common.json" ],
+            "start"   : "05 00 * * *"
+        }
+    }
+}

@@ -1,0 +1,339 @@
+#!/usr/bin/env bash
+
+function usage() {
+    cat <<EOF
+Usage: ${SCRIPTNAME} [OPTIONS] COMMAND [ARGUMENTS]
+
+OPTIONS:
+  -c CONFIG             Use alternate CONFIG file.
+
+COMMANDS:
+  start JOBNAME         Start JOBNAME.
+
+  stop JOBNAME          Stop JOBNAME.
+
+  restart JOBNAME       Restart JOBNAME.
+
+  status [JOBNAME]      Get the status of JOBNAME.  If JOBNAME is omitted, get
+                        the status of all jobs.
+
+  crontab [JOBNAME]     Generate the crontab entry for JOBNAME.  If JOBNAME is
+                        omitted, generate the entry for all jobs.
+
+FILES:
+  ${CONFIG}
+                        Job configuration file.
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+source "realpath.sh"
+
+SCRIPTNAME="${BASH_SOURCE##*/}"
+CONFIG="${SCRIPTNAME}.json"
+
+declare JOBS=()
+declare -A JOBSPEC=()
+declare -A PROCS=()
+
+
+function main() {
+    local OPTARG OPTIND OPTERR opt
+    local command
+    local isok=1
+
+    # Process options
+    while getopts "c:h" opt; do
+        case "$opt" in
+            c)  CONFIG=$OPTARG     ;;
+            h)  usage "$@" && exit ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    # Process the command
+    case "$1" in
+        start)   command=job-start   && shift ;;
+        stop)    command=job-stop    && shift ;;
+        restart) command=job-restart && shift ;;
+        status)  command=job-status  && shift ;;
+        crontab) command=job-crontab && shift ;;
+        "")      printf "Must specify COMMAND\n" 1>&2 && isok=0 ;;
+        *)       printf "%s: Invalid COMMAND\n" "$1" 1>&2 && isok=0 ;;
+    esac
+
+    # Sanity check
+    if (( ! isok )); then
+        usage 1>&2
+        exit 1
+    fi
+
+    load_procs
+    load_config
+    "$command" "$@"
+}
+
+
+function load_procs() {
+    local line pid cmd
+
+    PROCS=()
+    shopt -s extglob
+
+    while IFS= read -r line; do
+        line=${line##+( )}
+        pid=${line%% *}
+        cmd=${line#* }
+
+        PROCS[$cmd]+="${PROCS[$cmd]+ }$pid"
+    done < <(ps ax -o pid,command)
+}
+
+
+function load_config() {
+    local config=$(common cfg "$CONFIG")
+    local name cmdline restart start stop quiet timeout
+    local isok=1
+
+    # List of jobs and commands
+    while IFS=$'\002' read -d $'\000' -r name cmdline restart start stop quiet timeout; do
+        [[ -z "$cmdline" ]] && printf "%s: Missing /jobs/%s/cmdline\n" "$CONFIG" "$name" 1>&2 && isok=0
+
+        # Convert the cmdline array to a format that can be reused as shell input
+        IFS=$'\003' read -d $'\002' -ra cmdline <<<"$cmdline"
+        cmdline=$(printf " %q" "${cmdline[@]:0:${#cmdline[@]}-1}")
+
+        # Convert json true/false to 1/0
+        [[ "$quiet" == "true" ]] && quiet=1 || quiet=0
+
+        JOBS+=( "$name" )
+        JOBSPEC[${name}|cmdline]=${cmdline:1}
+        JOBSPEC[${name}|restart]=$restart
+        JOBSPEC[${name}|start]=$start
+        JOBSPEC[${name}|stop]=$stop
+        JOBSPEC[${name}|quiet]=$quiet
+        JOBSPEC[${name}|timeout]=$timeout
+    done < <(printf "%s\n" "$config" | jq -j '.jobs | to_entries[] |
+        .key                         , "\u0002",
+        (
+            .value.cmdline[]//[] | . , "\u0003"
+        )                            , "\u0002",
+        .value.restart//""           , "\u0002",
+        .value.start  //""           , "\u0002",
+        .value.stop   //""           , "\u0002",
+        .value.quiet  //""           , "\u0002",
+        .value.timeout//""           , "\u0000"
+    ')
+
+    (( isok ))
+}
+
+
+function job-start() {
+    local jobname
+    local isok=1
+
+    # Start each job
+    for jobname in "$@"; do
+        local pids=$(get-pids "$jobname")
+
+        if [[ -n "$pids" ]]; then
+            printf "%s already running as pid(s) %s\n" "$jobname" "$pids"
+        elif is_job "$jobname"; then
+            eval "local cmdline=( $(get-cmdline "$jobname") )"
+
+            printf "Starting %s...\n" "$jobname"
+            nohup "${cmdline[@]}" &>/dev/null &
+        else
+            printf "%s: Invalid job\n" "$jobname" 1>&2 \
+            && isok=0
+        fi
+    done
+
+    (( isok ))
+}
+
+
+function get-cmdline() {
+    local jobname=$1
+    local cmdline=$(get-jobspec "$jobname" "cmdline")
+    local timeout=$(get-jobspec "$jobname" "timeout")
+    local quiet=$(get-jobspec "$jobname" "quiet")
+    local flags=()
+
+    eval "cmdline=\"$cmdline\""
+    [[ -n "$timeout" ]] && flags+=( "-t" "$timeout" )
+    [[ -n "$quiet"   ]] && flags+=( "-q" )
+
+    printf "%q\n" "bash" "$(command -v joblogger)" "${flags[@]}" "$jobname" "$cmdline"
+}
+
+
+function job-stop() {
+    local jobname
+    local isok=1
+
+    # Stop each job
+    for jobname in "$@"; do
+        local pids=$(get-pids "$jobname")
+        local waitfor=5
+
+        # Sanity check
+        ! is_job "$jobname" && printf "%s: Invalid job\n" "$jobname" 1>&2 && isok=0 && continue
+        [[ -z "$pids" ]] && printf "%s is not running\n" "$jobname" && continue
+
+        # Attempt to kill the pid(s)
+        printf "Stopping %s with pid(s) %s\n" "$jobname" "$pids"
+        kill $pids
+
+        # Wait for $waitfor seconds to confirm they died
+        while (( waitfor )); do
+            # update the process table
+            load_procs
+            pids=$(get-pids "$jobname")
+
+            # break if dead
+            [[ -z "$pids" ]] && break
+
+            # ... otherwise wait
+            waitfor=$((waitfor - 1))
+            sleep 1
+        done
+
+        # Report error
+        if [[ -n "$pids" ]]; then
+            printf "%s: Unable to stop pid(s) %s\n" "$jobname" "$pids" 1>&2
+            isok=0
+        fi
+    done
+
+    (( isok ))
+}
+
+
+function job-restart() {
+    job-stop "$@" && job-start "$@"
+}
+
+
+function job-status() {
+    local rowformat="%16s %20s %20s  %8s  %s"
+    local timeformat="%Y-%m-%d %H:%M:%S"
+    local jobs=()
+    local jobname
+    local isok=1
+
+    # Print the status of all jobs if no job is specified
+    if (( ! $# )); then
+        set -- "${JOBS[@]}"
+    fi
+
+    # Timestamp
+    printf "%s\n\n" "Status as of $(date)"
+
+    # Header
+    printf "${rowformat}\n" "JOB" "STARTED" "STOPPED" "CODE" "CMDLINE"
+
+    # Status of each job
+    for jobname in "$@"; do
+        eval "local cmdline=\"$(get-jobspec "$jobname" "cmdline")\""
+        local token=$(tokenname "$jobname")
+        local pids=$(get-pids "$jobname")
+        local started="" stopped="" exitcode=""
+        local name value
+        local pid
+
+        ! is_job "$jobname" && cmdline="(no such job)" && isok=0
+        [[ -z "$pids" ]] && pids=-
+
+        if [[ -r "$token" ]]; then
+            while IFS== read -r name value; do
+                case "$name" in
+                    JOB_STARTED)  started=$(date "+${timeformat}" -d "@$value") ;;
+                    JOB_STOPPED)  stopped=$(date "+${timeformat}" -d "@$value") ;;
+                    JOB_EXITCODE) exitcode=$value ;;
+                esac
+            done < "$token"
+        fi
+
+        for pid in $pids; do
+            [[ -z "$started"  ]] && started=-
+            [[ -z "$stopped"  ]] && stopped=-
+            [[ -z "$exitcode" ]] && exitcode=$pid
+
+            printf "${rowformat}\n" "$jobname" "$started" "$stopped" "$exitcode" "$cmdline"
+            jobname=""
+        done
+    done
+    printf "\n"
+
+    (( isok ))
+}
+
+
+function job-crontab() {
+    local jobname type spec
+    local bashenv=$(common bashrc)
+    local isok=1
+
+    # Generate crontab for all jobs if no job is specified
+    if (( ! $# )); then
+        set -- "${JOBS[@]}"
+    fi
+
+    # Crontab for each job
+    for jobname in "$@"; do
+        for type in restart start stop; do
+            local when=$(get-jobspec "$jobname" "$type")
+            [[ -z "$when" ]] && continue
+
+            printf "%-15s BASH_ENV=%q %q %q %q\n" "$when" "$bashenv" "$(realpath-sh "$BASH_SOURCE")" "$type" "$jobname"
+        done
+    done
+
+    (( isok ))
+}
+
+
+function is_job() {
+    local jobname=$1
+
+    [[ " ${JOBS[*]} " == *" $jobname "* ]]
+}
+
+
+function get-jobspec() {
+    jobname=$1
+    specname=$2
+
+    printf "%s" "${JOBSPEC[${jobname}|${specname}]}"
+}
+
+
+function get-pids() {
+    local jobname=$1
+
+    if is_job $jobname; then
+        eval "local cmdline=( $(get-cmdline "$jobname") )"
+        local pids=${PROCS[${cmdline[*]}]-}
+
+        printf "%s\n" $pids
+    fi
+}
+
+
+function tokenname() {
+    local jobname=$1
+
+    printf "%s\n" "${WORKDIR}/token/${jobname}.token"
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"
