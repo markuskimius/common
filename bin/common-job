@@ -31,7 +31,8 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-source "realpath.sh"
+source "realpath.sh"  || exit 1
+source "joblogger.sh" || exit 1
 
 SCRIPTNAME="${BASH_SOURCE##*/}"
 CONFIG="${SCRIPTNAME}.json"
@@ -136,6 +137,8 @@ function load_config() {
 function job-start() {
     local jobname
     local isok=1
+
+    get
 
     # Start each job
     for jobname in "$@"; do
@@ -323,13 +326,6 @@ function get-pids() {
 
         printf "%s\n" $pids
     fi
-}
-
-
-function tokenname() {
-    local jobname=$1
-
-    printf "%s\n" "${WORKDIR}/token/${jobname}.token"
 }
 
 

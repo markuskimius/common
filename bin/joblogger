@@ -45,11 +45,10 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-source "logger.sh" || exit 1
+source "logger.sh"    || exit 1
+source "joblogger.sh" || exit 1
 
 SCRIPTNAME=$(basename -- "$BASH_SOURCE")
-TOKENDIR=$WORKDIR/token
-LOGDIR=$WORKDIR/log
 STARTED=$(date +%s)
 TIMEOUT=""
 
@@ -161,21 +160,6 @@ EOF
     } > "$tokenfile"
 
     return "$exitcode"
-}
-
-
-function logname() {
-    local jobname=$1
-    local datetime=$(date -d "@${STARTED}" "+%Y%m%d_%H:%M:%S")
-
-    printf "%s/%s_%s.log" "$LOGDIR" "$jobname" "$datetime"
-}
-
-
-function tokenname() {
-    local jobname=$1
-
-    printf "%s\n" "${TOKENDIR}/${jobname}.token"
 }
 
 
