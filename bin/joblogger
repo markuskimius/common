@@ -99,7 +99,7 @@ function joblogger() {
     mkdir -p "$logdir"                   \
     && mkdir -p "$tokendir"              \
     || {
-        printf "%s: Unable to setup for %s" "$SCRIPTNAME" "$jobname" 1>&2
+        printf "%s: Unable to setup for %s\n" "$SCRIPTNAME" "$jobname" 1>&2
         return 1
     }
 

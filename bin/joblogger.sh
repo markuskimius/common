@@ -15,9 +15,9 @@ declare -F logname >/dev/null && return
 
 function logname() {
     local jobname=$1
-    local datetime=$(date -d "+%Y%m%d_%H:%M:%S")
+    local datetime=$(date "+%Y%m%d_%H:%M:%S")
 
-    printf "%s/log/%s_%s.log" "$LOGDIR" "$jobname" "$datetime"
+    printf "%s/log/%s_%s.log" "$WORKDIR" "$jobname" "$datetime"
 }
 
 

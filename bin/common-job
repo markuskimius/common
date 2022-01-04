@@ -8,7 +8,10 @@ OPTIONS:
   -c CONFIG             Use alternate CONFIG file.
 
 COMMANDS:
-  start JOBNAME         Start JOBNAME.
+  start [-f,--fg] JOBNAME
+                        Start JOBNAME.  By default, the job is started with
+                        'nohup' in the background.  Specifying -f or --fg
+                        option runs the job in the foreground instead.
 
   stop JOBNAME          Stop JOBNAME.
 
@@ -31,6 +34,7 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
+source "getopt.sh"    || exit 1
 source "realpath.sh"  || exit 1
 source "joblogger.sh" || exit 1
 
@@ -135,10 +139,19 @@ function load_config() {
 
 
 function job-start() {
+    local OPTOPT OPTARG
+    local foreground=0
     local jobname
     local isok=1
 
-    get
+    # Process options
+    while getopt-sh "f" "fg" "$@"; do
+        case "$OPTOPT" in
+            -f|--fg)  foreground=1  ;;
+            *)        isok=0        ;;
+        esac
+    done
+    set -- "${OPTARG[@]}"
 
     # Start each job
     for jobname in "$@"; do
@@ -150,7 +163,12 @@ function job-start() {
             eval "local cmdline=( $(get-cmdline "$jobname") )"
 
             printf "Starting %s...\n" "$jobname"
-            nohup "${cmdline[@]}" &>/dev/null &
+
+            if (( foreground )); then
+                "${cmdline[@]}"
+            else
+                nohup "${cmdline[@]}" &>/dev/null &
+            fi
         else
             printf "%s: Invalid job\n" "$jobname" 1>&2 \
             && isok=0
