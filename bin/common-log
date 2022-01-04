@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+
+function usage() {
+    cat <<EOF
+Usage: ${SCRIPTNAME} [OPTIONS] COMMAND [ARGUMENTS]
+
+COMMANDS:
+  name JOBNAME          Print the name of the latest log file for JOBNAME.
+
+  cat [ARGS] JOBNAME    Cat the content of the latest log for JOBNAME.  ARGS,
+                        if any, are passed to the cat command.
+
+  tail [ARGS] JOBNAME   Tail the latest log file for JOBNAME.  ARGS, if any,
+                        are passed to the tail command.
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+source "getopt.sh"     || exit 1
+source "common-job.sh" || exit 1
+
+SCRIPTNAME=${BASH_SOURCE##*/}
+
+
+function main() {
+    local OPTARG OPTIND OPTERR opt
+    local command
+    local isok=1
+
+    # Process options
+    while getopts "h" opt; do
+        case "$opt" in
+            h)  usage "$@" && exit ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+
+    # Process the command
+    case "$1" in
+        name)    command=log-name && shift ;;
+        cat)     command=log-cat  && shift ;;
+        tail)    command=log-tail && shift ;;
+        "")      printf "Must specify COMMAND\n" 1>&2 && isok=0 ;;
+        *)       printf "%s: Invalid COMMAND\n" "$command" 1>&2 && isok=0 ;;
+    esac
+
+    # Sanity check
+    if (( ! isok )); then
+        usage 1>&2
+        exit 1
+    fi
+
+    "$command" "$@"
+}
+
+
+function log-name() {
+    local jobname
+    local isok=1
+
+    for jobname in "$@"; do
+        logname-latest "$jobname" || isok=0
+    done
+
+    (( isok ))
+}
+
+
+function log-cat() {
+    local shortopts="AbeEnstTuv"
+    local longopts="show-all,number-nonblank,show-ends,number,squeeze-blank,show-tabs,show-nonprinting,help,version"
+    local OPTOPT OPTARG
+    local passthru=()
+    local jobname
+    local isok=1
+
+    # Process options known to cat
+    while getopt-sh "$shortopts" "$longopts" "$@"; do
+        case "$OPTOPT" in
+            *)  passthru+=( "$OPTOPT" )
+        esac
+    done
+
+    # cat the logfile
+    for jobname in "${OPTARG[@]}"; do
+        local logfile
+
+        logfile=$(log-name "$jobname") || isok=0
+
+        if (( isok )); then
+            cat "${passthru[@]}" "$logfile"
+        fi
+    done
+
+    (( isok ))
+}
+
+
+function log-tail() {
+    local shortopts="c:f::Fn:qs:vz0123456789"
+    local longopts="bytes:,follow::,lines:,max-unchanged-stats:,pid:,quiet,silent,retry,sleep-interval:,verbose,zero-terminated,help,version"
+    local OPTOPT OPTARG
+    local passthru=()
+    local numeric=""
+    local jobname
+    local isok=1
+
+    # Process options known to tail
+    while getopt-sh "$shortopts" "$longopts" "$@"; do
+        case "$OPTOPT" in
+            -[0-9f])  numeric+="${OPTOPT:1}"   ;;
+            -[Fqvz])  passthru+=( "$OPTOPT" )  ;;
+            -[cns])   passthru+=( "$OPTOPT" "$OPTARG" ) ;;
+
+            --quiet|--silent|--retry|--verbose|--zero-terminated|--help|--version)
+                      passthru+=( "$OPTOPT" )
+                      ;;
+
+            --bytes|--follow|--lines|--max-unchanged-stats|--pid|--sleep-interval)
+                      passthru+=( "$OPTOPT" "$OPTARG" )
+                      ;;
+
+            *)        printf "%s: Invalid option, we should neverget here\n" "$OPTOPT" 1>&2
+                      return 1
+                      ;;
+        esac
+    done
+    [[ -n "$numeric" ]] && passthru+=( "-$numeric" )
+
+    # tail the logfile
+    for jobname in "${OPTARG[@]}"; do
+        local logfile
+
+        logfile=$(log-name "$jobname") || isok=0
+
+        if (( isok )); then
+            tail "${passthru[@]}" "$logfile"
+        fi
+    done
+
+    (( isok ))
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"

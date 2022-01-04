@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+
+function usage() {
+    cat <<EOF
+Usage: ${SCRIPTNAME} [OPTIONS] COMMAND [ARGUMENTS]
+
+COMMANDS:
+  name JOBNAME          Print the name of the token file for JOBNAME.
+
+  cat [ARGS] JOBNAME    Cat the content of the token for JOBNAME.  ARGS, if
+                        any, are passed to the cat command.
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+source "getopt.sh"     || exit 1
+source "common-job.sh" || exit 1
+
+SCRIPTNAME=${BASH_SOURCE##*/}
+
+
+function main() {
+    local OPTARG OPTIND OPTERR opt
+    local command
+    local isok=1
+
+    # Process options
+    while getopts "h" opt; do
+        case "$opt" in
+            h)  usage "$@" && exit ;;
+        esac
+    done
+    shift $((OPTIND - 1))
+
+    # Process the command
+    case "$1" in
+        name)    command=token-name && shift ;;
+        cat)     command=token-cat  && shift ;;
+        "")      printf "Must specify COMMAND\n" 1>&2 && isok=0 ;;
+        *)       printf "%s: Invalid COMMAND\n" "$command" 1>&2 && isok=0 ;;
+    esac
+
+    # Sanity check
+    if (( ! isok )); then
+        usage 1>&2
+        exit 1
+    fi
+
+    "$command" "$@"
+}
+
+
+function token-name() {
+    local jobname
+    local isok=1
+
+    for jobname in "$@"; do
+        tokenname "$jobname" || isok=0
+    done
+
+    (( isok ))
+}
+
+
+function token-cat() {
+    local shortopts="AbeEnstTuv"
+    local longopts="show-all,number-nonblank,show-ends,number,squeeze-blank,show-tabs,show-nonprinting,help,version"
+    local OPTOPT OPTARG
+    local passthru=()
+    local jobname
+    local isok=1
+
+    # Process options known to cat
+    while getopt-sh "$shortopts" "$longopts" "$@"; do
+        case "$OPTOPT" in
+            *)  passthru+=( "$OPTOPT" )
+        esac
+    done
+
+    # cat the tokenfile
+    for jobname in "${OPTARG[@]}"; do
+        local tokenfile
+
+        tokenfile=$(token-name "$jobname") || isok=0
+
+        if (( isok )); then
+            cat "${passthru[@]}" "$tokenfile"
+        fi
+    done
+
+    (( isok ))
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"

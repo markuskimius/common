@@ -65,6 +65,26 @@
 
         "status" : {
             "!command" : [ "f'{DPM}/common/bin/common-job'", "'status'" ]
+        },
+
+        "log" : {
+            "!command" : [ "f'{DPM}/common/bin/common-log'", "'name'" ]
+        },
+
+        "logcat" : {
+            "!command" : [ "f'{DPM}/common/bin/common-log'", "'cat'" ]
+        },
+
+        "logtail" : {
+            "!command" : [ "f'{DPM}/common/bin/common-log'", "'tail'" ]
+        },
+
+        "token" : {
+            "!command" : [ "f'{DPM}/common/bin/common-token'", "'name'" ]
+        },
+
+        "tokencat" : {
+            "!command" : [ "f'{DPM}/common/bin/common-token'", "'cat'" ]
         }
     }
 }

@@ -28,6 +28,18 @@ function logname() {
 }
 
 
+function logname-latest() {
+    local jobname=$1
+    local last=""
+
+    for last in "${WORKDIR}/log/${jobname}"_????????_??:??:??.log; do
+        :
+    done
+
+    [[ -e "$last" ]] && printf "%s\n" "$last"
+}
+
+
 ##############################################################################
 # ENTRY POINT
 
