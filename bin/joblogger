@@ -141,6 +141,7 @@ EOF
         printf "JOB_NAME=%s\n" "$jobname"
         printf "JOB_LOG=%s\n" "$logfile"
         printf "JOB_PID=%s\n" "$pid"
+        printf "JOB_PPID=%s\n" "$$"
         printf "JOB_STARTED=%s\n" "$STARTED"
         printf "JOB_TIMEOUT=%s\n" "$TIMEOUT"
 
