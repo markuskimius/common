@@ -2,7 +2,7 @@
     "jobs": {
         "MONITOR" : {
             "cmdline" : [ "monitor", "monitor-common.json" ],
-            "start"   : "@restart",
+            "start"   : "@reboot",
             "quiet"   : true
         },
 
