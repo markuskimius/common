@@ -45,8 +45,8 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
-source "logger.sh"    || exit 1
-source "joblogger.sh" || exit 1
+source "logger.sh"     || exit 1
+source "common-job.sh" || exit 1
 
 SCRIPTNAME=$(basename -- "$BASH_SOURCE")
 STARTED=$(date +%s)

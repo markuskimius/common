@@ -7,11 +7,18 @@
 # https://github.com/markuskimius/common/blob/main/LICENSE
 ##############################################################################
 
-declare -F logname >/dev/null && return
+declare -F tokenname >/dev/null && return
 
 
 ##############################################################################
 # FUNCTIONS
+
+function tokenname() {
+    local jobname=$1
+
+    printf "%s/token/%s.token\n" "$WORKDIR" "$jobname"
+}
+
 
 function logname() {
     local jobname=$1
@@ -21,19 +28,12 @@ function logname() {
 }
 
 
-function tokenname() {
-    local jobname=$1
-
-    printf "%s/token/%s.token\n" "$WORKDIR" "$jobname"
-}
-
-
 ##############################################################################
 # ENTRY POINT
 
 if (( ${#BASH_SOURCE[@]} == 1 )); then
-    logname "$@"
     tokenname "$@"
+    logname "$@"
 fi
 
 
