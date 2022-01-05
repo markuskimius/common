@@ -1,1 +1,2 @@
-$(common-job crontab)
+$(common-job crontab MONITOR)
+$(common-job crontab ARCHIVE)
