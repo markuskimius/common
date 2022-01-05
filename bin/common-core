@@ -94,7 +94,7 @@ function test-command() {
 
     local commands=(
         basename cat crontab dirname env git grep hostname jq netstat
-        sort tac timeout tput whoami
+        sort tac timeout tput whoami ts
     )
     local vars=( DPM HOME HOSTNAME USER WORKDIR )
     local isok=1
