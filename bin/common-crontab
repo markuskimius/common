@@ -111,7 +111,14 @@ function crontab-cat() {
 
 
 function crontab-diff() {
-    "${DIFF-diff}" "$@" <(crontab -l) <(crontab-cat)
+    local numheader=3
+
+    #
+    # Diff but skip the header containing the timestamp of when the crontab was
+    # generated.
+    #
+
+    "${DIFF-diff}" "$@" <(crontab -l | tail -n +$numheader) <(crontab-cat | tail -n +$numheader)
 }
 
 
