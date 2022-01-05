@@ -11,12 +11,12 @@
 
 function usage() {
     cat <<EOF
-Usage: ${SCRIPTNAME} [OPTIONS] JOBNAME COMMAND [ARGUMENTS]
+Usage: ${SCRIPTNAME} [OPTIONS] JOBNAME COMMAND
 
 Execute a command and write its output to a log file.
 
   JOBNAME               The name of the job.
-  COMMAND [ARGUMENTS]   Command to execute.
+  COMMAND               Command to execute.
 
 Options:
   -q                    Quiet mode.
@@ -118,22 +118,8 @@ function joblogger() {
         bash <(cat <<EOF
             export PYTHONUNBUFFERED=1
 
-            # Trap signal handlers
-            trap 'printf "\nCaught SIGTERM\n" 1>&2 ; trap - TERM HUP INT ; exit \$(( 128 + $sigterm ))' TERM
-            trap 'printf "\nCaught SIGHUP\n"  1>&2 ; trap - TERM HUP INT ; exit \$(( 128 + $sighup  ))' HUP
-            trap 'printf "\nCaught SIGINT\n"  1>&2 ; trap - TERM HUP INT ; kill -s INT \$\$' INT
-            trap 'kill 0' EXIT
-
-            # Do my thing.  Background the job so we can report catching signals.
-            (
-                $(printf "%s " "$@")
-            ) & wait \$!
-
-            # Restore the signal handlers
-            trap - TERM
-            trap - HUP
-            trap - INT
-            trap - EXIT
+            # Do my thing
+            exec $*
 EOF
         ) &> "$logfile" & pid=$!
 
