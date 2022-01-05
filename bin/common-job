@@ -160,14 +160,14 @@ function job-start() {
         if [[ -n "$pids" ]]; then
             printf "%s already running as pid(s) %s\n" "$jobname" "$pids"
         elif is_job "$jobname"; then
-            eval "local cmdline=( $(get-cmdline "$jobname") )"
+            eval "local jobcommand=( $(get-jobcommand "$jobname") )"
 
             printf "Starting %s...\n" "$jobname"
 
             if (( foreground )); then
-                "${cmdline[@]}"
+                exec "${jobcommand[@]}"
             else
-                nohup "${cmdline[@]}" &>/dev/null &
+                nohup "${jobcommand[@]}" &>/dev/null &
             fi
         else
             printf "%s: Invalid job\n" "$jobname" 1>&2 \
@@ -179,7 +179,7 @@ function job-start() {
 }
 
 
-function get-cmdline() {
+function get-jobcommand() {
     local jobname=$1
     local cmdline=$(get-jobspec "$jobname" "cmdline")
     local timeout=$(get-jobspec "$jobname" "timeout")
@@ -339,8 +339,8 @@ function get-pids() {
     local jobname=$1
 
     if is_job $jobname; then
-        eval "local cmdline=( $(get-cmdline "$jobname") )"
-        local pids=${PROCS[${cmdline[*]}]-}
+        eval "local jobcommand=( $(get-jobcommand "$jobname") )"
+        local pids=${PROCS[${jobcommand[*]}]-}
 
         printf "%s\n" $pids
     fi
