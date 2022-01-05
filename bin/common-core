@@ -89,10 +89,11 @@ EOF
 
 
 function test-command() {
+    source "ps.sh"       || exit 1
     source "colorize.sh" || exit 1
 
     local commands=(
-        basename cat crontab dirname env git grep hostname jq netstat ps
+        basename cat crontab dirname env git grep hostname jq netstat
         sort tac timeout tput whoami
     )
     local vars=( DPM HOME HOSTNAME USER WORKDIR )
@@ -140,6 +141,12 @@ function test-command() {
 
         command -v getopt >/dev/null && getopt -T &>/dev/null
         (( $? == 4 )) && pass || fail
+    fi
+
+    # ps
+    if true; then
+        checking "ps with -o support"
+        ps-sh ax -ouser &>/dev/null && pass || fail
     fi
 
     # realpath

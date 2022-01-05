@@ -34,6 +34,7 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
+source "ps.sh"         || exit 1
 source "getopt.sh"     || exit 1
 source "realpath.sh"   || exit 1
 source "common-job.sh" || exit 1
@@ -95,7 +96,7 @@ function load_procs() {
         cmd=${line#* }
 
         PROCS[$cmd]+="${PROCS[$cmd]+ }$pid"
-    done < <(ps ax -o pid,command)
+    done < <(ps-sh ax -o pid,command)
 }
 
 

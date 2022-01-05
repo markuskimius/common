@@ -56,10 +56,10 @@ EOF
 ##############################################################################
 # PROGRAM BEGINS HERE
 
+source "ps.sh"     || exit 1
 source "getopt.sh" || exit 1
 
 SCRIPTNAME=$(basename -- "$BASH_SOURCE")
-PSPATH=$(command -v procps || command -v ps)     # Use 'procps' if installed
 COLS=( ppid pid ${PIDTREE_COLS//,/ } )
 WIDEMODE=0
 
@@ -169,7 +169,12 @@ function memoize_ps() {
         PS[$pid|cols]=${PS[$pid|cols]#* }
         PS[$pid|cols]+=${PS[$pid|command]%% *}
         PS[$pid|command]=${PS[$pid|command]#* }
-    done < <($PSPATH axww -o $(printf "%s," "${COLS[@]}")command)
+    done < <(ps-sh axww -o $(printf "%s," "${COLS[@]}")command)
+
+    # Ensure pid 1 exists
+    if [[ " ${PS[pids]} " != *" 1 "* ]]; then
+        PS[pids]+=" 1"
+    fi
 }
 
 
