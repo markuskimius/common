@@ -13,16 +13,16 @@
         },
 
         "test" : {
-            "!command"    : [ "f'{DPM}/common/bin/common-core'", "'test'" ],
-            "!help"       : [ "f'{DPM}/common/bin/common-core'", "'-h'" ],
+            "!command"    : [ "f'{DPM}/common/bin/common-test'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-test'", "'-h'" ],
             "description" : [ "Test the environment to ensure it has all dependencies",
                               "required by COMMON."
                             ]
         },
 
         "bashrc" : {
-            "!command"    : [ "f'{DPM}/common/bin/common-core'", "'bashrc'" ],
-            "!help"       : [ "f'{DPM}/common/bin/common-core'", "'-h'" ],
+            "!command"    : [ "f'{DPM}/common/bin/common-bashrc'" ],
+            "!help"       : [ "f'{DPM}/common/bin/common-bashrc'", "'-h'" ],
             "description" : [ "Generate and output the name of the bashrc to source by",
                               "cronjobs."
                             ]

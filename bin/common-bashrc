@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/main/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Usage: ${SCRIPTNAME}
+
+Generate and output the name of the bashrc to source by cronjobs.
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+SCRIPTNAME=$(basename -- "$BASH_SOURCE")
+SCRIPTPATH=$BASH_SOURCE
+SCRIPTARGV=( "$@" )
+
+
+function main() {
+    local OPTIND OPTERR OPTARG opt
+    local isok=1
+
+    # Check arguments
+    while getopts "h" opt; do
+        case "$opt" in
+            h)  usage && exit ;;
+            *)  isok=0
+        esac
+    done
+    shift $((OPTIND-1))
+
+    # Sanity check
+    if (( ! isok )); then
+        usage 1>&2
+        exit 1
+    fi
+
+    # Lock
+    lock-workdir || exit 1
+
+    # Do my thing
+    bashrc-command "$@"
+}
+
+
+function bashrc-command() {
+    local dpm=$(command -v dpm)
+    local bashrc="${WORKDIR}/.bashrc"
+    local isok=1
+
+    # Sanity check
+    [[ -z "$dpm"     ]] && printf "dpm not found\n" 1>&2 && isok=0
+    [[ -z "$DPM"     ]] && printf "\$DPM not set\n" 1>&2 && isok=0
+    [[ -z "$WORKDIR" ]] && printf "\$WORKDIR not set\n" 1>&2 && isok=0
+
+    if (( isok )); then
+        cat > "$bashrc" <<EOF
+[[ -z "\$__DPM__" ]] && export __DPM__=1 && eval "$(printf "\$(bash --norc --noprofile %q setup)" "$dpm")"
+EOF
+        (( $? )) && isok=0
+    fi
+
+    if (( isok )); then
+        printf "%s\n" "$bashrc"
+    fi
+
+    (( isok ))
+}
+
+
+##############################################################################
+# HELPER FUNCTIONS
+
+function lock-workdir() {
+    local lockfile="${WORKDIR}/.lock"
+    local locked=0
+
+    #
+    # 'flock' is preferred but (1) it requires restarting the script and (2) it
+    # may not be available on some systems.  This script must be written such
+    # that (1) is not an issue.
+    #
+    # As for (2), we fall back on 'shlock' if 'flock' is not available.
+    # 'shlock' is less preferred because it may run into a race condition on
+    # some platforms.  Also, as with 'flock', it may not be available on some
+    # systems.
+    #
+
+    if command -v flock >/dev/null; then
+        if [[ "$FLOCKER" == "$lockfile" ]]; then
+            locked=1
+        else
+            export FLOCKER=$lockfile
+            exec flock "$lockfile" "$SCRIPTPATH" "${SCRIPTARGV[@]}"
+        fi
+    elif command -v shlock >/dev/null; then
+        while true; do
+            shlock -p $$ -f "$lockfile" && locked=1 && break
+            sleep 1
+        done
+    else
+        printf "No locking command available\n" 1>&2
+    fi
+
+    (( locked ))
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"
