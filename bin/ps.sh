@@ -17,9 +17,11 @@ function ps-sh() {
     # use ps.
     #
 
-    command -v procps >/dev/null \
-    && procps "$@"               \
-    || ps "$@"
+    if command -v procps >/dev/null; then
+        procps "$@"
+    else
+        ps "$@"
+    fi
 }
 
 
@@ -27,7 +29,7 @@ function ps-sh() {
 # ENTRY POINT
 
 if (( ${#BASH_SOURCE[@]} == 1 )); then
-    realpath-sh "$@"
+    ps-sh "$@"
 fi
 
 

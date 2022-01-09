@@ -15,8 +15,13 @@ function realpath-sh() {
     local next=$1
 
     # Use realpath or readlink -f if available
-    command -v realpath >/dev/null && realpath "$next" && return 0
-    command -v readlink >/dev/null && readlink -f "$next" 2>/dev/null && return 0
+    if command -v realpath >/dev/null; then
+        realpath "$next"
+        return $?
+    elif command -v readlink >/dev/null; then
+        readlink -f "$next" 2>/dev/null
+        return $?
+    fi
 
     # Manual
     while [[ "$next" != "$last" ]]; do
