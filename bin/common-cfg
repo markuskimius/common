@@ -55,6 +55,8 @@ CONFIG
                         DATA when the command is executed by USER on any host,
                         or on HOST by any user, respectively.
 
+    "*COMMAND" : DATA   Insert DATA only on a system that has COMMAND.
+
   The python3 environment under which EXPRESSIONS and STATEMENTS run define the
   following variables:
 

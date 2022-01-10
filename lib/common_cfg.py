@@ -2,7 +2,7 @@
 COMMON: Unix utilities
 https://github.com/markuskimius/common
 
-Copyright (c)2020-2021 Mark Kim
+Copyright (c)2020-2022 Mark Kim
 Released under GNU General Public License version 2.
 https://github.com/markuskimius/common/blob/main/LICENSE
 '''
@@ -10,11 +10,12 @@ https://github.com/markuskimius/common/blob/main/LICENSE
 import os
 import sys
 import json
+import shutil
 import getpass
 import platform
 import common_util
 
-__copyright__ = 'Copyright 2021 Mark Kim'
+__copyright__ = 'Copyright 2020-2022 Mark Kim'
 
 
 ##############################################################################
@@ -30,6 +31,7 @@ def create(*args):
     cfg.add_filter(PreloadFilter())
     cfg.add_filter(AccountFilter())
     cfg.add_filter(SelectFilter())
+    cfg.add_filter(CommandFilter())
     cfg.add_filter(PythonFilter())
 
     for filepattern in args:
@@ -269,6 +271,32 @@ class SelectFilter:
                     filtered[k] = self.__call__(v)
 
             json_data = filtered
+
+        elif isinstance(json_data, list):
+            for i,v in enumerate(json_data):
+                json_data[i] = self.__call__(v)
+
+        return json_data
+
+
+class CommandFilter:
+    def __call__(self, json_data):
+        if isinstance(json_data, dict):
+            filtered = {}
+            matched = None
+
+            for k,v in json_data.items():
+                if isinstance(k,str) and k.startswith('*'):
+                    if shutil.which(k[1:]):
+                        matched = self.__call__(v)
+                else:
+                    filtered[k] = self.__call__(v)
+
+            if matched is None : json_data = filtered
+            elif filtered      : json_data = common_util.merge_dict(filtered, matched)
+            else               : json_data = matched
+
+
 
         elif isinstance(json_data, list):
             for i,v in enumerate(json_data):
