@@ -31,7 +31,7 @@ def create(*args):
     cfg.add_filter(PreloadFilter())
     cfg.add_filter(AccountFilter())
     cfg.add_filter(SelectFilter())
-    cfg.add_filter(CommandFilter())
+    cfg.add_filter(WhichFilter())
     cfg.add_filter(PythonFilter())
 
     for filepattern in args:
@@ -192,9 +192,22 @@ class PreloadFilter:
             if '#preload' in json_data:
                 del json_data['#preload']
 
+            if json_data == {}:
+                json_data = None
+
         elif isinstance(json_data, list):
+            filtered = []
+
             for i,v in enumerate(json_data):
-                json_data[i] = self.__call__(v)
+                fv = self.__call__(v)
+
+                if fv is not None:
+                    filtered += [fv]
+
+            json_data = filtered
+
+            if not json_data:
+                json_data = None
 
         return json_data
 
@@ -220,9 +233,22 @@ class ImportFilter:
                 if json_data : json_data = common_util.merge_dict(included, json_data)
                 else         : json_data = included
 
+            if json_data == {}:
+                json_data = None
+
         elif isinstance(json_data, list):
+            filtered = []
+
             for i,v in enumerate(json_data):
-                json_data[i] = self.__call__(v)
+                fv = self.__call__(v)
+
+                if fv is not None:
+                    filtered += [fv]
+
+            json_data = filtered
+
+            if not json_data:
+                json_data = None
 
         return json_data
 
@@ -246,11 +272,22 @@ class AccountFilter:
             elif filtered      : json_data = common_util.merge_dict(filtered, matched)
             else               : json_data = matched
 
-
+            if json_data == {}:
+                json_data = None
 
         elif isinstance(json_data, list):
+            filtered = []
+
             for i,v in enumerate(json_data):
-                json_data[i] = self.__call__(v)
+                fv = self.__call__(v)
+
+                if fv is not None:
+                    filtered += [fv]
+
+            json_data = filtered
+
+            if not json_data:
+                json_data = None
 
         return json_data
 
@@ -272,14 +309,27 @@ class SelectFilter:
 
             json_data = filtered
 
+            if json_data == {}:
+                json_data = None
+
         elif isinstance(json_data, list):
+            filtered = []
+
             for i,v in enumerate(json_data):
-                json_data[i] = self.__call__(v)
+                fv = self.__call__(v)
+
+                if fv is not None:
+                    filtered += [fv]
+
+            json_data = filtered
+
+            if not json_data:
+                json_data = None
 
         return json_data
 
 
-class CommandFilter:
+class WhichFilter:
     def __call__(self, json_data):
         if isinstance(json_data, dict):
             filtered = {}
@@ -296,11 +346,22 @@ class CommandFilter:
             elif filtered      : json_data = common_util.merge_dict(filtered, matched)
             else               : json_data = matched
 
-
+            if json_data == {}:
+                json_data = None
 
         elif isinstance(json_data, list):
+            filtered = []
+
             for i,v in enumerate(json_data):
-                json_data[i] = self.__call__(v)
+                fv = self.__call__(v)
+
+                if fv is not None:
+                    filtered += [fv]
+
+            json_data = filtered
+
+            if not json_data:
+                json_data = None
 
         return json_data
 
@@ -327,9 +388,22 @@ class PythonFilter:
 
             json_data = filtered
 
+            if json_data == {}:
+                json_data = None
+
         elif isinstance(json_data, list):
+            filtered = []
+
             for i,v in enumerate(json_data):
-                json_data[i] = self.__call__(v)
+                fv = self.__call__(v)
+
+                if fv is not None:
+                    filtered += [fv]
+
+            json_data = filtered
+
+            if not json_data:
+                json_data = None
 
         return json_data
 
