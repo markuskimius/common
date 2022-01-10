@@ -258,14 +258,14 @@ function job-status() {
     printf "%s\n\n" "Status as of $(date)"
 
     # Header
-    printf "${rowformat}\n" "JOB" "STARTED" "STOPPED" "CODE" "CMDLINE"
+    printf "${rowformat}\n" "JOB" "STARTED" "STOPPED" "STATUS" "CMDLINE"
 
     # Status of each job
     for jobname in "$@"; do
         eval "local cmdline=\"$(get-jobspec "$jobname" "cmdline")\""
         local token=$(tokenname "$jobname")
         local pids=$(get-pids "$jobname")
-        local started="" stopped="" exitcode=""
+        local started="" stopped="" status=""
         local name value
         local pid
 
@@ -277,7 +277,7 @@ function job-status() {
                 case "$name" in
                     JOB_STARTED)  started=$(date "+${timeformat}" -d "@$value") ;;
                     JOB_STOPPED)  stopped=$(date "+${timeformat}" -d "@$value") ;;
-                    JOB_EXITCODE) exitcode=$value ;;
+                    JOB_EXITCODE) status=$value ;;
                 esac
             done < "$token"
         fi
@@ -285,9 +285,9 @@ function job-status() {
         for pid in $pids; do
             [[ -z "$started"  ]] && started=-
             [[ -z "$stopped"  ]] && stopped=-
-            [[ -z "$exitcode" ]] && exitcode=$pid
+            [[ -z "$status"   ]] && status=$pid
 
-            printf "${rowformat}\n" "$jobname" "$started" "$stopped" "$exitcode" "$cmdline"
+            printf "${rowformat}\n" "$jobname" "$started" "$stopped" "$status" "$cmdline"
             jobname=""
         done
     done
