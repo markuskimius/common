@@ -56,7 +56,7 @@ function test-command() {
 
     local commands=(
         basename cat crontab dirname env git grep hostname jq netstat
-        sort tac timeout tput whoami ts mpstat netstat free
+        sort tac timeout tput whoami ts netstat
     )
     local vars=( DPM HOME HOSTNAME USER WORKDIR )
     local isok=1
@@ -105,13 +105,39 @@ function test-command() {
         (( $? == 4 )) && pass || fail
     fi
 
-    # ps
+    # ps with -o support
     if true; then
         checking "ps with -o support"
         ps-sh ax -ouser &>/dev/null && pass || fail
     fi
 
-    # realpath
+    # mpstat or iostat
+    if true; then
+        checking "mpstat or iostat"
+
+        if command -v mpstat >/dev/null; then
+            pass
+        elif command -v iostat >/dev/null; then
+            pass
+        else
+            fail
+        fi
+    fi
+
+    # free or vm_stat
+    if true; then
+        checking "free or vm_stat"
+
+        if command -v free >/dev/null; then
+            pass
+        elif command -v vm_stat >/dev/null; then
+            pass
+        else
+            fail
+        fi
+    fi
+
+    # realpath or readlink -f
     if true; then
         checking "realpath or readlink -f"
 
