@@ -13,6 +13,42 @@ declare -F monitor-cpu >/dev/null && return
 function monitor-cpu() {
     if command -v mpstat >/dev/null; then
         mpstat -o JSON | jq -j '.sysstat.hosts[0].statistics[0]."cpu-load"[0] | to_entries[] | "%", .key, ",", .value, "\n"'
+    elif command -v vmstat >/dev/null; then
+        local names=()
+        local values=()
+        local line
+
+        while IFS= read -r line; do
+            local fields=( ${line#* } )
+
+            # Skip some rows
+            [[ "$line" == *memory* ]] && continue  # First line
+
+            # Header row
+            if (( ${#names[@]} == 0 )); then
+                names=( "${fields[@]}" )
+                continue
+            fi
+
+            # Data row
+            for (( i=0; i < ${#fields[@]}; i++ )); do
+                values[i]=$(( ${values[i]-0} + ${fields[i]%.*} ))
+            done
+        done < <(vmstat)
+
+        # Print the accumulated values
+        for (( i=0; i < ${#names[@]}; i++ )); do
+            # Map vmstat headers to mpstat headers
+            case "${names[i]}" in
+                us) names[i]="%usr"    ;;
+                sy) names[i]="%sys"    ;;
+                id) names[i]="%idle"   ;;
+                wa) names[i]="%iowait" ;;
+                st) names[i]="%steal"  ;;
+            esac
+
+            printf "%s,%s\n" "${names[i]}" "${values[i]}"
+        done
     elif command -v iostat >/dev/null; then
         local names=()
         local values=()
@@ -34,14 +70,6 @@ function monitor-cpu() {
 
             # Data row
             for (( i=0; i < ${#fields[@]}; i++ )); do
-                # Skip columns without summable values
-                # case "${names[i]}" in
-                #     Name|Iface) continue ;;
-                #     Mtu|MTU)    continue ;;
-                #     Network)    continue ;;
-                #     Address)    continue ;;
-                # esac
-
                 values[i]=$(( ${values[i]-0} + ${fields[i]%.*} ))
             done
         done < <(iostat -c 2>/dev/null || iostat)

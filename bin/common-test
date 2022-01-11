@@ -113,9 +113,11 @@ function test-command() {
 
     # mpstat or iostat
     if true; then
-        checking "mpstat or iostat"
+        checking "mpstat, vmstat, or iostat"
 
         if command -v mpstat >/dev/null; then
+            pass
+        elif command -v vmstat >/dev/null; then
             pass
         elif command -v iostat >/dev/null; then
             pass
