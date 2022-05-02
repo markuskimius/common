@@ -313,7 +313,7 @@ function job-crontab() {
             local when=$(get-jobspec "$jobname" "$type")
             [[ -z "$when" ]] && continue
 
-            printf "%-15s BASH_ENV=%q %q %q %q\n" "$when" "$bashenv" "$(realpath-sh "$BASH_SOURCE")" "$type" "$jobname"
+            printf "%-15s BASH_ENV=%q %q %q %q %q\n" "$when" "$bashenv" "${BASH-bash}" "$(realpath-sh "$BASH_SOURCE")" "$type" "$jobname"
         done
     done
 
