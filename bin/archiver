@@ -54,13 +54,13 @@ function main() {
     for service in "${!PATTERNS[@]}"; do
         logger INFO "Archiving ${service}..."
         archiver "$service" 2>&1 | timestamp
+        isok=$(( $? ))
         printf "\n"
 
-        if (( $? == 0 )); then
+        if (( isok )); then
             logger INFO "Archiving ${service} OK"
         else
             logger ERROR "Archiving ${service} FAILED"
-            isok=0
         fi
     done
 
