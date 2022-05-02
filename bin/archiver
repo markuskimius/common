@@ -54,7 +54,7 @@ function main() {
     for service in "${!PATTERNS[@]}"; do
         logger INFO "Archiving ${service}..."
         archiver "$service" 2>&1 | timestamp
-        isok=$(( $? ))
+        (( $? )) && isok=0
         printf "\n"
 
         if (( isok )); then
