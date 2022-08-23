@@ -32,7 +32,7 @@ EOF
 source "getopt.sh" || exit 1
 
 SCRIPTNAME=$(basename -- "$BASH_SOURCE")
-PARAMS=( name method 'username//""' hostname 'options//""' )
+PARAMS=( name method 'username//""' hostname 'options//""' 'command//""' )
 WIDTHS=( -12 -30 1 )
 WHATIWANT=()
 REGEX=0
@@ -137,6 +137,7 @@ function action() {
     local username=$3
     local hostname=$4
     local options=$5
+    local command=$6
     local login=$hostname
     local output=()
     local what
@@ -151,10 +152,11 @@ function action() {
             server) output+=( "$hostname" )         ;;
             login)  output+=( "$login" )            ;;
             list)   output+=( "$(                 \
-                        printf '%*s %*s %*s'      \
+                        printf '%*s %*s %*s %*s'  \
                         ${WIDTHS[0]} "${name}"    \
                         ${WIDTHS[1]} "${login}"   \
                         ${WIDTHS[2]} "${options}" \
+                        ${WIDTHS[3]} "${command}" \
                     )" ) ;;
             *)      echo "We shouldn't get here -- $what" 1>&2 && die ;;
         esac
@@ -174,10 +176,16 @@ function action-hop() {
     local username=$3
     local hostname=$4
     local options=$5
-    local login=$6
+    local command
+    local login=$7
+
+    # Quote the command
+    if [[ -n "$6" ]]; then
+        command=( "$6" )
+    fi
 
     case "$method" in
-        ssh)  ssh $options "${login}"                               ;;
+        ssh)  ssh $options "${login}" "${command[@]}"               ;;
         *)    echo "Unknown login method -- $method" 1>&2 && exit 1 ;;
     esac
 }
