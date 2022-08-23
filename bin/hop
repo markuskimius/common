@@ -33,7 +33,7 @@ source "getopt.sh" || exit 1
 
 SCRIPTNAME=$(basename -- "$BASH_SOURCE")
 PARAMS=( name method 'username//""' hostname 'options//""' 'command//""' )
-WIDTHS=( -12 -30 1 )
+WIDTHS=( -12 -30 -30 1 )
 WHATIWANT=()
 REGEX=0
 
