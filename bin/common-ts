@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+##############################################################################
+# COMMON: Unix utilities
+# https://github.com/markuskimius/common
+#
+# Copyright (c)2020-2021 Mark Kim
+# Released under GNU General Public License version 2.
+# https://github.com/markuskimius/common/blob/main/LICENSE
+##############################################################################
+
+function usage() {
+    cat <<EOF
+Usage: ${SCRIPTNAME}
+
+  Echo STDIN to STDOUT, prefixed by current timestamp.
+
+EOF
+}
+
+
+##############################################################################
+# PROGRAM BEGINS HERE
+
+SCRIPTNAME=$(basename -- "$BASH_SOURCE")
+
+
+function main() {
+    local OPTARG OPTIND OPTERR opt
+    local isok=1
+
+    # Process options
+    while getopts "h" opt; do
+        case "$opt" in
+            h)  usage && exit  ;;
+            *)  isok=0
+        esac
+    done
+
+    # Sanity check
+    if (( ! isok )); then
+        usage 1>&2
+        exit 1
+    fi
+
+    # Do my thing
+    while IFS= read -r line; do
+        printf "[%s] %s\n" "$(date "+%Y-%m-%d %H:%M:%S.%N %z")" "$line"
+    done
+}
+
+
+##############################################################################
+# ENTRY POINT
+
+main "$@"
