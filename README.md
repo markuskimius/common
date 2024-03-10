@@ -1,3 +1,11 @@
+> [!CAUTION]
+> This package is now archived.
+> Please use [core](https://github.com/markuskimius/core) instead (it's faster).
+> 
+> The most notable difference between common and core is that common uses JSON config files;
+> core uses CSV config files which is faster to read.
+
+
 # common
 Unix utilities
 
